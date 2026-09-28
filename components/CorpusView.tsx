@@ -11,6 +11,7 @@ import {
   useHydrated,
   useReports,
 } from "@/lib/store";
+import ScoreTrend from "./report/ScoreTrend";
 import { Badge, ScoreBar } from "./ui/Badge";
 
 type Bucket = "phrases" | "sentences" | "errors";
@@ -61,7 +62,7 @@ export default function CorpusView() {
         </p>
         <Link
           href="/"
-          className="bg-accent mt-5 inline-block rounded-lg px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90"
+          className="bg-accent-solid mt-5 inline-block rounded-lg px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90"
         >
           去批改第一篇
         </Link>
@@ -108,6 +109,17 @@ export default function CorpusView() {
         />
       </div>
 
+      {/* 总分走势：让进步可见 */}
+      {reports.length >= 2 && (
+        <section className="border-line bg-card mt-6 rounded-xl border p-5">
+          <ScoreTrend reports={reports} />
+          <p className="text-ink-faint mt-3 text-[11.5px] leading-relaxed">
+            每条记录都存在你自己的浏览器里，不上传任何服务器。多写几篇，
+            曲线才能反映真实趋势 —— 单篇分数的波动通常来自题目难度，不代表水平变化。
+          </p>
+        </section>
+      )}
+
       {/* 薄弱项分布 */}
       {stats.errorByDimension.length > 0 && (
         <section className="border-line bg-card mt-6 rounded-xl border p-5">
@@ -144,7 +156,9 @@ export default function CorpusView() {
               type="button"
               onClick={() => setTab(t.id)}
               className={`flex-1 shrink-0 rounded-[6px] px-3.5 py-2 text-[12.5px] whitespace-nowrap transition sm:py-1.5 ${
-                tab === t.id ? "bg-accent text-white" : "text-ink-soft hover:text-ink"
+                tab === t.id
+                  ? "bg-accent-solid text-white"
+                  : "text-ink-soft hover:text-ink"
               }`}
             >
               {t.label}

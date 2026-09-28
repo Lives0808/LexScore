@@ -127,7 +127,9 @@ export default function GradeForm() {
                   type="button"
                   onClick={() => switchExam(e)}
                   className={`rounded-[6px] px-4 py-1.5 text-[13px] font-medium transition ${
-                    exam === e ? "bg-accent text-white" : "text-ink-soft hover:text-ink"
+                    exam === e
+                      ? "bg-accent-solid text-white"
+                      : "text-ink-soft hover:text-ink"
                   }`}
                 >
                   {e === "ielts" ? "雅思 IELTS" : "托福 TOEFL"}
@@ -273,7 +275,7 @@ export default function GradeForm() {
               type="button"
               onClick={submit}
               disabled={busy}
-              className="bg-accent w-full rounded-lg px-5 py-3 text-[14px] font-medium text-white transition hover:opacity-90 disabled:opacity-50 sm:w-auto sm:py-2.5 sm:text-[13.5px]"
+              className="bg-accent-solid w-full rounded-lg px-5 py-3 text-[14px] font-medium text-white transition hover:opacity-90 disabled:opacity-50 sm:w-auto sm:py-2.5 sm:text-[13.5px]"
             >
               {busy ? "批改中…" : "开始批改"}
             </button>

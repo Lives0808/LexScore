@@ -7,6 +7,7 @@ import type { AnnotationStatus } from "@/lib/types";
 import { applyAccepted, DIMENSION_LABELS } from "@/lib/text";
 import { updateAnnotationStatus, useHydrated, useReports } from "@/lib/store";
 import DimensionCard from "./DimensionCard";
+import RadarChart from "./RadarChart";
 import SentenceDiff from "./SentenceDiff";
 import {
   ConstraintsPanel,
@@ -66,7 +67,7 @@ export default function ReportView() {
         </p>
         <Link
           href="/"
-          className="bg-accent mt-5 inline-block rounded-lg px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90"
+          className="bg-accent-solid mt-5 inline-block rounded-lg px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90"
         >
           返回批改
         </Link>
@@ -144,16 +145,32 @@ export default function ReportView() {
 
       {/* 四维评分 */}
       <section className="mt-6">
-        <div className="mb-3 flex items-baseline justify-between">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-ink text-[15px] font-semibold">四维评分</h2>
           <span className="text-ink-faint text-[11.5px]">
             展开可查看每一项的评分依据与原文引用
           </span>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {report.dimensions.map((d) => (
-            <DimensionCard key={d.dimension} dimension={d} onJump={jump} />
-          ))}
+
+        <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
+          {/* 雷达图：一眼看出强弱项的形状 */}
+          <div className="border-line bg-card flex flex-col items-center rounded-xl border p-4">
+            <RadarChart
+              dimensions={report.dimensions}
+              baseline={report.exam === "ielts" ? 6 : 3}
+            />
+            <p className="text-ink-faint mt-2 text-center text-[11px] leading-relaxed">
+              虚线为 {report.exam === "ielts" ? "Band 6.0" : "3.0 分"} 参考线，
+              <br />
+              落在虚线内的维度就是当前短板。
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {report.dimensions.map((d) => (
+              <DimensionCard key={d.dimension} dimension={d} onJump={jump} />
+            ))}
+          </div>
         </div>
       </section>
 
@@ -162,7 +179,7 @@ export default function ReportView() {
         <div className="mb-3 flex flex-wrap items-center gap-3">
           <h2 className="text-ink text-[15px] font-semibold">逐句对照批注</h2>
 
-          <div className="flex w-full flex-wrap items-center gap-2 lg:ml-auto lg:w-auto">
+          <div className="no-print flex w-full flex-wrap items-center gap-2 lg:ml-auto lg:w-auto">
             <div className="border-line bg-card inline-flex overflow-x-auto rounded-lg border p-0.5">
               {STATUS_FILTERS.map((f) => (
                 <button
@@ -171,7 +188,7 @@ export default function ReportView() {
                   onClick={() => setStatus(f.id)}
                   className={`shrink-0 rounded-[6px] px-2.5 py-1.5 text-[11.5px] whitespace-nowrap transition ${
                     status === f.id
-                      ? "bg-accent text-white"
+                      ? "bg-accent-solid text-white"
                       : "text-ink-soft hover:text-ink"
                   }`}
                 >
@@ -225,9 +242,16 @@ export default function ReportView() {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1800);
               }}
-              className="bg-accent flex-1 rounded-lg px-3 py-2 text-[12px] font-medium text-white transition hover:opacity-90 lg:flex-none lg:py-1.5 lg:text-[11.5px]"
+              className="bg-accent-solid flex-1 rounded-lg px-3 py-2 text-[12px] font-medium text-white transition hover:opacity-90 lg:flex-none lg:py-1.5 lg:text-[11.5px]"
             >
               {copied ? "已复制" : "复制修改稿"}
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="border-line text-ink-soft hover:border-line-strong hover:text-ink flex-1 rounded-lg border px-3 py-2 text-[12px] transition lg:flex-none lg:py-1.5 lg:text-[11.5px]"
+            >
+              导出 PDF
             </button>
           </div>
         </div>

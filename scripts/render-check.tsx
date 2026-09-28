@@ -10,6 +10,8 @@ import {
   TemplatePanel,
 } from "../components/report/Diagnostics";
 import AnnotationCard from "../components/report/AnnotationCard";
+import RadarChart from "../components/report/RadarChart";
+import ScoreTrend from "../components/report/ScoreTrend";
 
 /**
  * 报告页 UI 的结构校验。
@@ -101,6 +103,43 @@ async function main() {
       "移动端应默认折叠评分依据",
     );
     console.log(`  四维评分卡片：${report.dimensions.length} 张渲染正常`);
+
+    /* ---------- 可视化：雷达图与走势图 ---------- */
+    const radarHtml = renderToStaticMarkup(
+      <RadarChart
+        dimensions={report.dimensions}
+        baseline={report.exam === "ielts" ? 6 : 3}
+      />,
+    );
+    check(radarHtml.includes("<svg"), "雷达图未渲染出 SVG");
+    check(radarHtml.includes("polygon"), "雷达图缺少得分多边形");
+    for (const d of report.dimensions) {
+      check(radarHtml.includes(d.label), `雷达图缺少轴标签 ${d.label}`);
+      check(radarHtml.includes(`${d.score} / ${d.max}`), `雷达图缺少 ${d.label} 的分数`);
+    }
+
+    // 走势图需要至少两篇才能画线；这里用同一篇复制成两条来验证渲染逻辑
+    const trendHtml = renderToStaticMarkup(
+      <ScoreTrend
+        reports={[
+          {
+            ...report,
+            id: "t1",
+            createdAt: report.createdAt - 86400000,
+            overall: report.overall - 0.5,
+          },
+          { ...report, id: "t2" },
+        ]}
+      />,
+    );
+    check(trendHtml.includes("polyline"), "走势图缺少折线");
+    check(trendHtml.includes("总分走势"), "走势图缺少标题");
+    // 只有一篇时不应渲染
+    check(
+      renderToStaticMarkup(<ScoreTrend reports={[report]} />) === "",
+      "只有一篇记录时走势图不应渲染",
+    );
+    console.log("  可视化：雷达图 + 总分走势图渲染正常");
 
     /* ---------- 诊断面板 ---------- */
     const diagHtml = [

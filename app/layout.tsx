@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -80,6 +81,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </header>
         <main className="flex-1">{children}</main>
+        <ServiceWorkerRegistrar />
         <footer className="border-line border-t py-6">
           <div className="text-ink-faint mx-auto max-w-[1200px] px-5 text-[11.5px] leading-relaxed">
             LexScore 的评分依据来自可定位到原文的客观指标与公开评分标准，

@@ -63,7 +63,7 @@ export function ScoreBar({
 }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   const colors: Record<string, string> = {
-    accent: "bg-accent",
+    accent: "bg-accent-solid",
     pos: "bg-pos",
     neg: "bg-neg",
     warn: "bg-warn",

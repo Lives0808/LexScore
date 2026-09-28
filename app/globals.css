@@ -9,6 +9,8 @@
   --color-bg: #f6f8fa;
   --color-card: #ffffff;
   --color-accent: #1f4d8f;
+  /* 实心按钮专用：需要保证与白字有足够对比度，深色模式下不能跟着变亮 */
+  --color-accent-solid: #1f4d8f;
   --color-accent-soft: #eaf0f8;
   --color-pos: #0d8050;
   --color-pos-soft: #e7f5ee;
@@ -25,9 +27,43 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
+/* ------------------------------------------------------------------ *
+ * 深色模式：跟随系统设置。
+ * 所有颜色都走 CSS 变量，所以只需要在这里覆盖一遍变量值。
+ * ------------------------------------------------------------------ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-ink: #e6ecf2;
+    --color-ink-soft: #9aabb8;
+    --color-ink-faint: #6c7b88;
+    --color-line: #242d36;
+    --color-line-strong: #38444f;
+    --color-bg: #0d1218;
+    --color-card: #151b22;
+    --color-accent: #7aaae4;
+    --color-accent-solid: #2a5ea8;
+    --color-accent-soft: #17222f;
+    --color-pos: #4fc38f;
+    --color-pos-soft: #12261d;
+    --color-neg: #ef8378;
+    --color-neg-soft: #2b1a18;
+    --color-warn: #d9a441;
+    --color-warn-soft: #292012;
+    --color-violet: #ad90e0;
+    --color-violet-soft: #1e1a2c;
+  }
+
+  /* 深色下浅色阴影没有意义，改用描边表达层次 */
+  .shadow-lg {
+    box-shadow: 0 0 0 1px var(--color-line-strong);
+  }
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  color-scheme: light dark;
 }
 
 body {
@@ -57,6 +93,69 @@ body {
   }
   * {
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * 打印 / 导出 PDF
+ * 只保留批改内容本身：去掉导航、按钮、筛选器等交互元素。
+ * ------------------------------------------------------------------ */
+
+@media print {
+  :root {
+    /* 打印强制走浅色，避免深色模式把整页喷成黑底 */
+    --color-ink: #10161d;
+    --color-ink-soft: #46535e;
+    --color-ink-faint: #6b7a87;
+    --color-line: #d8dee5;
+    --color-line-strong: #bcc6d0;
+    --color-bg: #ffffff;
+    --color-card: #ffffff;
+    --color-accent: #1f4d8f;
+    --color-accent-solid: #1f4d8f;
+    --color-accent-soft: #eef3f9;
+    --color-pos: #0d6b45;
+    --color-pos-soft: #eef7f2;
+    --color-neg: #a52b22;
+    --color-neg-soft: #fbeeed;
+    --color-warn: #85590d;
+    --color-warn-soft: #fdf6e9;
+    --color-violet: #4a2f75;
+    --color-violet-soft: #f3eefa;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .no-print,
+  header,
+  footer,
+  nav,
+  button,
+  select {
+    display: none !important;
+  }
+
+  /* 折叠的内容在打印时全部展开 */
+  .print-expand {
+    display: block !important;
+  }
+
+  /* 避免卡片被切到两页 */
+  section,
+  article,
+  blockquote,
+  li {
+    break-inside: avoid;
+  }
+
+  a[href]::after {
+    content: "";
   }
 }
 

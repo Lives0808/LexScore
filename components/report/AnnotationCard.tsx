@@ -81,7 +81,7 @@ export default function AnnotationCard({
               type="button"
               onClick={() => onChange("accepted")}
               disabled={adviceOnly}
-              className="bg-accent rounded-md px-3.5 py-2 text-[12.5px] font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35 md:py-1.5 md:text-[12px]"
+              className="bg-accent-solid rounded-md px-3.5 py-2 text-[12.5px] font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35 md:py-1.5 md:text-[12px]"
             >
               接受修改
             </button>
