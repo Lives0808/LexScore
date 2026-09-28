@@ -1,12 +1,17 @@
 # LexScore
 
+[![Release](https://img.shields.io/github/v/release/Lives0808/LexScore?style=flat-square&color=6366F1&label=release)](https://github.com/Lives0808/LexScore/releases)
+[![License](https://img.shields.io/github/license/Lives0808/LexScore?style=flat-square&color=6366F1&label=license)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-6366F1?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6366F1?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Capacitor](https://img.shields.io/badge/Capacitor-6366F1?style=flat-square&logo=capacitor&logoColor=white)](https://capacitorjs.com)
+[![Android](https://img.shields.io/badge/Android-6366F1?style=flat-square&logo=android&logoColor=white)](https://github.com/Lives0808/LexScore/tree/main/android)
+
 **雅思 / 托福写作批改。每一处扣分都定位到原文，而不是一句空泛的评价。**
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Lives0808/LexScore)
-[![Release](https://img.shields.io/github/v/release/Lives0808/LexScore)](https://github.com/Lives0808/LexScore/releases)
-[![Android](https://img.shields.io/badge/Android-APK-3ddc84)](https://github.com/Lives0808/LexScore/releases/latest)
 
-免费 · 无需注册 · 数据不出本机 · 安卓 App 离线可用
+免费开源 · 无需注册 · 数据不出本机 · 安卓 App 离线可用
 
 ---
 
@@ -186,16 +191,13 @@ scripts/      校验与构建脚本
 
 ---
 
-## 许可
+## 许可证
 
-产品定位是**免费开源**。
+MIT © 2026 Lives0808 — 详见 [LICENSE](LICENSE)。
 
-当前仓库仍为**私有** —— 因为 `android/keystore/lexscore-release.jks` 提交在仓库里，
-直接转公开会暴露安卓签名密钥。如果要做成真正的开源项目，需要先：
+**关于安卓签名密钥**：`android/keystore/lexscore-release.jks` 提交在仓库里，
+为的是保证后续版本能覆盖安装（Android 要求签名一致）。如果你要上架应用商店，
+请**替换成你自己的密钥**并从仓库移出 —— 公开仓库里的签名密钥任何人都能用。
 
-1. 生成你自己的安卓签名密钥，替换 `android/keystore.properties`
-2. 从仓库历史中移除旧密钥，并重新构建 APK
-3. 补充 LICENSE 文件
-4. 将仓库改为公开
-
-在此之前，Vercel 一键部署按钮只对仓库所有者有效。
+**关于仓库可见性**：如果仓库保持私有，README 顶部的徽章与 Vercel 一键部署按钮
+只对仓库所有者有效，其他人访问会 404。
