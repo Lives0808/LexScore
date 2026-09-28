@@ -46,6 +46,7 @@ fun HomeScreen(
     onReading: (String) -> Unit,
     onListening: (String) -> Unit,
     onLoadSample: (String) -> Unit,
+    onOpenCamera: () -> Unit,
     onGrade: () -> Unit,
     onOpenReport: (com.lexscore.nativeapp.data.Report) -> Unit,
     onOpenCorpus: () -> Unit,
@@ -167,9 +168,27 @@ fun HomeScreen(
                 LexTextField(
                     value = state.essay,
                     onValueChange = onEssay,
-                    placeholder = "粘贴作文正文。段落之间请空行分隔，引擎会据此判断段落结构。",
+                    placeholder = "粘贴作文正文，或直接用拍照识别。段落之间请空行分隔，引擎会据此判断段落结构。",
                     minLines = 10,
                 )
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(c.accentSoft)
+                        .border(1.dp, c.accent.copy(alpha = 0.3f), RoundedCornerShape(9.dp))
+                        .clickable { onOpenCamera() }
+                        .padding(vertical = 11.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "拍照识别作文（离线 OCR）",
+                        color = c.accent,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
             }
         }
 

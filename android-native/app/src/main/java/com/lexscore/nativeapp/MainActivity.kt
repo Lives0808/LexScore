@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.lexscore.nativeapp.ui.AppViewModel
 import com.lexscore.nativeapp.ui.CorpusScreen
+import com.lexscore.nativeapp.ui.camera.CameraFlowScreen
 import com.lexscore.nativeapp.ui.HomeScreen
 import com.lexscore.nativeapp.ui.LexScoreTheme
 import com.lexscore.nativeapp.ui.LexTheme
@@ -39,6 +40,7 @@ class MainActivity : ComponentActivity() {
         // 调试钩子：am start ... --ez lexscore_autorun true
         // 会用第一篇示例作文自动跑一次批改，便于自动化验证整条链路。
         val autorun = intent?.getBooleanExtra(EXTRA_AUTORUN, false) ?: false
+        val ocrTestPath = intent?.getStringExtra(EXTRA_OCR_TEST)
 
         setContent {
             LexScoreTheme {
@@ -47,7 +49,7 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(LexTheme.colors.bg),
                 ) {
-                    AppRoot(autorun = autorun)
+                    AppRoot(autorun = autorun, ocrTestPath = ocrTestPath)
                 }
             }
         }
@@ -55,17 +57,23 @@ class MainActivity : ComponentActivity() {
 
     private companion object {
         const val EXTRA_AUTORUN = "lexscore_autorun"
+        const val EXTRA_OCR_TEST = "lexscore_ocr_test"
     }
 }
 
 @Composable
-private fun AppRoot(autorun: Boolean = false, vm: AppViewModel = viewModel()) {
+private fun AppRoot(
+    autorun: Boolean = false,
+    ocrTestPath: String? = null,
+    vm: AppViewModel = viewModel(),
+) {
     val state by vm.state.collectAsStateWithLifecycle()
     val c = LexTheme.colors
 
     // 自动跑一次：加载示例 → 批改。整个流程交给 ViewModel，避免 Compose 副作用时序问题。
     LaunchedEffect(Unit) {
         if (autorun) vm.requestAutorun()
+        if (ocrTestPath != null) vm.runOcrOnFile(ocrTestPath)
     }
 
     if (!state.loaded) {
@@ -94,6 +102,7 @@ private fun AppRoot(autorun: Boolean = false, vm: AppViewModel = viewModel()) {
                 onReading = vm::setReading,
                 onListening = vm::setListening,
                 onLoadSample = vm::loadSample,
+                onOpenCamera = vm::openCamera,
                 onGrade = vm::grade,
                 onOpenReport = vm::openReport,
                 onOpenCorpus = vm::openCorpus,
@@ -117,6 +126,11 @@ private fun AppRoot(autorun: Boolean = false, vm: AppViewModel = viewModel()) {
                     )
                 }
             }
+
+            Screen.Camera -> CameraFlowScreen(
+                onApplyText = vm::applyOcrText,
+                onCancel = vm::openHome,
+            )
 
             Screen.Corpus -> CorpusScreen(
                 state = state,

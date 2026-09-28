@@ -151,7 +151,14 @@ function assemble(input: GradeInput) {
       return rank(b.severity) - rank(a.severity) || b.lift - a.lift;
     });
 
-    const corpus = buildCorpus(reportId, sentences, merged, grammar.errors, lexis, topics);
+    const corpus = buildCorpus(
+      reportId,
+      sentences,
+      merged,
+      grammar.errors,
+      lexis,
+      topics,
+    );
 
     const report: Report = {
       id: reportId,

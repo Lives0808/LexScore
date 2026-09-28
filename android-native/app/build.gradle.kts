@@ -16,13 +16,20 @@ android {
         applicationId = "com.lexscore.nativeapp"
         minSdk = 26
         targetSdk = 36
-        versionCode = 6
-        versionName = "0.5.0"
+        versionCode = 7
+        versionName = "0.6.0"
 
         // 引擎 bundle 由 scripts/build-engine-bundle.mjs 生成并放进 assets/
         // 不做压缩，避免运行时解压开销
         androidResources {
             noCompress += listOf("js", "html")
+        }
+
+        // 只保留手机在用的 ABI。
+        // ML Kit 的原生 OCR 库每个架构约 11MB，四个架构全打进去就是 40MB+，
+        // 而 x86/x86_64 只用于模拟器，armeabi-v7a 覆盖老设备，arm64 覆盖绝大多数手机。
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
     }
 
@@ -43,7 +50,10 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // 开启 R8：ML Kit 与序列化库都自带 consumer 规则，
+            // 这里压缩的主要是依赖里用不到的代码
+            isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -92,6 +102,11 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core")
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+
+    // 拍照批改：读取 EXIF 方向 + 离线 OCR
+    implementation("androidx.exifinterface:exifinterface:1.4.2")
+    // ML Kit 拉丁文字识别：模型打包进 APK，完全离线，不上传图片
+    implementation("com.google.mlkit:text-recognition:16.0.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

@@ -3,6 +3,7 @@ package com.lexscore.nativeapp.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import android.net.Uri
 import com.lexscore.nativeapp.data.Annotation
 import com.lexscore.nativeapp.data.CorpusEntry
 import com.lexscore.nativeapp.data.GradeInput
@@ -21,7 +22,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class Screen { Home, Report, Corpus }
+enum class Screen { Home, Report, Corpus, Camera }
 
 data class UiState(
     val screen: Screen = Screen.Home,
@@ -64,6 +65,73 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
+
+    /**
+     * 调试钩子：对指定图片跑完整的「导入 → 找纸边 → 矫正 → 去阴影 → OCR」链路，
+     * 结果打到 logcat 并回填输入框。
+     *
+     * 用于自动化验证图像算法，避免依赖点击系统相册的坐标（很容易点偏）。
+     */
+    fun runOcrOnFile(relativePath: String) {
+        viewModelScope.launch {
+            val tag = "LexScore"
+            val file = java.io.File(getApplication<Application>().cacheDir, relativePath)
+            if (!file.exists()) {
+                android.util.Log.e(tag, "测试图片不存在: ${file.absolutePath}")
+                return@launch
+            }
+            runCatching {
+                val started = System.currentTimeMillis()
+                val uri = Uri.parse("file://${file.absolutePath}")
+                val src = withContext(Dispatchers.Default) {
+                    com.lexscore.nativeapp.imaging.ImageOps.loadOriented(getApplication(), uri)
+                }
+                val tLoad = System.currentTimeMillis()
+                val quad = withContext(Dispatchers.Default) {
+                    com.lexscore.nativeapp.imaging.ImageOps.detectDocumentQuad(src)
+                }
+                val tDetect = System.currentTimeMillis()
+                val warped = withContext(Dispatchers.Default) {
+                    com.lexscore.nativeapp.imaging.ImageOps.warpPerspective(src, quad)
+                }
+                val tWarp = System.currentTimeMillis()
+                val cleaned = withContext(Dispatchers.Default) {
+                    com.lexscore.nativeapp.imaging.ImageOps.cleanDocument(warped)
+                }
+                val tClean = System.currentTimeMillis()
+                val text = com.lexscore.nativeapp.imaging.Ocr.recognize(warped)
+                val tOcr = System.currentTimeMillis()
+
+                android.util.Log.i(tag, "=== OCR 测试链路 ===")
+                android.util.Log.i(tag, "原图 ${src.width}x${src.height}  " +
+                    "纸边 ${quad.points.joinToString(" ") { "(%.0f,%.0f)".format(it.x, it.y) }}")
+                android.util.Log.i(tag, "矫正后 ${warped.width}x${warped.height}")
+                android.util.Log.i(tag, "耗时 载入 ${tLoad-started}ms · 找边 ${tDetect-tLoad}ms · " +
+                    "矫正 ${tWarp-tDetect}ms · 增强 ${tClean-tWarp}ms · OCR ${tOcr-tClean}ms")
+                android.util.Log.i(tag, "词数 ${text.split(Regex("[^A-Za-z']+")).count { it.isNotBlank() }}")
+                android.util.Log.i(tag, "--- 识别结果开始 ---\n$text\n--- 识别结果结束 ---")
+
+                // 把中间结果存到外部可读位置，方便拉回来看效果
+                withContext(Dispatchers.IO) {
+                    val outDir = java.io.File(getApplication<Application>().cacheDir, "ocr-debug")
+                    outDir.mkdirs()
+                    java.io.File(outDir, "warped.png").outputStream().use {
+                        warped.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+                    }
+                    java.io.File(outDir, "cleaned.png").outputStream().use {
+                        cleaned.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+                    }
+                }
+
+                text
+            }.onSuccess { text ->
+                _state.update { it.copy(essay = text, screen = Screen.Home, error = null) }
+            }.onFailure {
+                android.util.Log.e(tag, "OCR 链路失败", it)
+                _state.update { s -> s.copy(error = it.message ?: "OCR 测试失败") }
+            }
+        }
+    }
 
     /** 调试钩子：启动后自动用第一篇示例跑一次批改 */
     private var autorunPending = false
@@ -187,7 +255,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun openCorpus() = _state.update { it.copy(screen = Screen.Corpus) }
+    fun openCamera() = _state.update { it.copy(screen = Screen.Camera, error = null) }
     fun openHome() = _state.update { it.copy(screen = Screen.Home) }
+
+    /**
+     * 把拍照识别的文字填进作文输入框，回到首页让用户确认后再批改。
+     *
+     * 不直接触发批改：OCR 难免有识别误差，让用户先过一眼更稳妥。
+     */
+    fun applyOcrText(text: String) = _state.update {
+        it.copy(essay = text, screen = Screen.Home, error = null)
+    }
 
     fun setDimensionFilter(v: String?) = _state.update { it.copy(dimensionFilter = v) }
     fun setStatusFilter(v: String) = _state.update { it.copy(statusFilter = v) }
