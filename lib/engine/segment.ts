@@ -2,11 +2,56 @@ import type { Paragraph, ParagraphRole, Sentence } from "../types";
 
 /** 句尾缩写：出现在这些词之后的句点不构成句子边界 */
 const HARD_ABBREV = new Set([
-  "mr", "mrs", "ms", "dr", "prof", "st", "vs", "fig", "al", "inc", "ltd",
-  "approx", "dept", "univ", "no", "vol", "pp", "cf", "resp", "jr", "sr",
-  "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept", "oct",
-  "nov", "dec", "mt", "ft", "hr", "min", "sec", "kg", "km", "cm", "mm",
-  "gov", "sen", "rep", "gen", "col", "capt", "lt", "sgt",
+  "mr",
+  "mrs",
+  "ms",
+  "dr",
+  "prof",
+  "st",
+  "vs",
+  "fig",
+  "al",
+  "inc",
+  "ltd",
+  "approx",
+  "dept",
+  "univ",
+  "no",
+  "vol",
+  "pp",
+  "cf",
+  "resp",
+  "jr",
+  "sr",
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "sept",
+  "oct",
+  "nov",
+  "dec",
+  "mt",
+  "ft",
+  "hr",
+  "min",
+  "sec",
+  "kg",
+  "km",
+  "cm",
+  "mm",
+  "gov",
+  "sen",
+  "rep",
+  "gen",
+  "col",
+  "capt",
+  "lt",
+  "sgt",
 ]);
 
 /** 这些缩写后面允许断句（因为其后通常跟大写开头的完整句子） */
@@ -39,7 +84,10 @@ function findBoundaries(text: string): number[] {
   return out;
 }
 
-export function splitSentences(text: string, offsetBase = 0): {
+export function splitSentences(
+  text: string,
+  offsetBase = 0,
+): {
   text: string;
   charStart: number;
   charEnd: number;
@@ -96,7 +144,8 @@ export function tokenize(text: string): string[] {
 
 const CONCLUSION_MARKERS =
   /\b(in conclusion|to conclude|on balance|to sum up|in summary|all things considered|taken together|overall,|ultimately)\b/i;
-const OVERVIEW_MARKERS = /\b(overall|in general|broadly speaking|it is clear that|the most striking)\b/i;
+const OVERVIEW_MARKERS =
+  /\b(overall|in general|broadly speaking|it is clear that|the most striking)\b/i;
 
 function detectRole(
   index: number,
@@ -156,12 +205,7 @@ export function segmentEssay(essay: string, isTask1: boolean): SegmentedEssay {
     const startInDoc = normalized.indexOf(text, charCursor);
     charCursor = startInDoc >= 0 ? startInDoc + text.length : charCursor;
 
-    const { role, note } = detectRole(
-      pIndex,
-      rawParagraphs.length,
-      text,
-      isTask1,
-    );
+    const { role, note } = detectRole(pIndex, rawParagraphs.length, text, isTask1);
 
     const pieces = splitSentences(text, startInDoc >= 0 ? startInDoc : 0);
     const ids: string[] = [];
@@ -218,10 +262,7 @@ export function findSentenceByFragment(
   return sentences.find((s) => s.text.toLowerCase().includes(needle));
 }
 
-export function sentenceById(
-  sentences: Sentence[],
-  id: string,
-): Sentence | undefined {
+export function sentenceById(sentences: Sentence[], id: string): Sentence | undefined {
   return sentences.find((s) => s.id === id);
 }
 
@@ -229,7 +270,20 @@ export function sentenceById(
 export function stem(word: string): string {
   const w = word.toLowerCase().replace(/['’-]/g, "");
   if (w.length <= 4) return w;
-  for (const suffix of ["ations", "ation", "ings", "ing", "ies", "ied", "ers", "er", "est", "ed", "es", "s"]) {
+  for (const suffix of [
+    "ations",
+    "ation",
+    "ings",
+    "ing",
+    "ies",
+    "ied",
+    "ers",
+    "er",
+    "est",
+    "ed",
+    "es",
+    "s",
+  ]) {
     if (w.endsWith(suffix) && w.length - suffix.length >= 4) {
       return w.slice(0, w.length - suffix.length);
     }

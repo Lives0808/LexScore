@@ -19,13 +19,15 @@
   --color-violet: #5b3a8f;
   --color-violet-soft: #f1ecfa;
 
-  --font-sans: var(--font-geist-sans), "PingFang SC", "Hiragino Sans GB",
-    "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --font-sans:
+    var(--font-geist-sans), "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans SC", system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -33,6 +35,28 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  /* 移动端点击时不出现灰色高亮块 */
+  -webkit-tap-highlight-color: transparent;
+  /* 防止长英文句子把窄屏撑出横向滚动 */
+  overflow-wrap: break-word;
+}
+
+/* 移动端输入控件字号必须 ≥16px，否则 iOS Safari 聚焦时会自动放大页面 */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* 原文中被批注标记的片段 */

@@ -57,25 +57,127 @@ function capitalize(text: string): string {
 }
 
 function preserveCase(matched: string, replacement: string): string {
-  if (matched.charAt(0) === matched.charAt(0).toUpperCase() && /[A-Za-z]/.test(matched.charAt(0))) {
+  if (
+    matched.charAt(0) === matched.charAt(0).toUpperCase() &&
+    /[A-Za-z]/.test(matched.charAt(0))
+  ) {
     return capitalize(replacement);
   }
   return replacement;
 }
 
 const STOPWORDS = new Set([
-  "the", "a", "an", "and", "or", "but", "if", "of", "to", "in", "on", "for",
-  "with", "as", "by", "at", "from", "that", "this", "these", "those", "is",
-  "are", "was", "were", "be", "been", "being", "have", "has", "had", "do",
-  "does", "did", "will", "would", "can", "could", "should", "may", "might",
-  "must", "it", "its", "they", "them", "their", "we", "our", "you", "your",
-  "he", "she", "his", "her", "i", "my", "me", "not", "no", "so", "than",
-  "then", "there", "here", "more", "most", "some", "any", "all", "both",
-  "each", "every", "other", "such", "only", "also", "very", "too", "much",
-  "many", "about", "into", "over", "up", "out", "down", "what", "which",
-  "who", "whom", "when", "where", "why", "how", "one", "two", "own", "same",
-  "write", "essay", "discuss", "give", "reasons", "examples", "answer",
-  "question", "following", "include", "words", "least",
+  "the",
+  "a",
+  "an",
+  "and",
+  "or",
+  "but",
+  "if",
+  "of",
+  "to",
+  "in",
+  "on",
+  "for",
+  "with",
+  "as",
+  "by",
+  "at",
+  "from",
+  "that",
+  "this",
+  "these",
+  "those",
+  "is",
+  "are",
+  "was",
+  "were",
+  "be",
+  "been",
+  "being",
+  "have",
+  "has",
+  "had",
+  "do",
+  "does",
+  "did",
+  "will",
+  "would",
+  "can",
+  "could",
+  "should",
+  "may",
+  "might",
+  "must",
+  "it",
+  "its",
+  "they",
+  "them",
+  "their",
+  "we",
+  "our",
+  "you",
+  "your",
+  "he",
+  "she",
+  "his",
+  "her",
+  "i",
+  "my",
+  "me",
+  "not",
+  "no",
+  "so",
+  "than",
+  "then",
+  "there",
+  "here",
+  "more",
+  "most",
+  "some",
+  "any",
+  "all",
+  "both",
+  "each",
+  "every",
+  "other",
+  "such",
+  "only",
+  "also",
+  "very",
+  "too",
+  "much",
+  "many",
+  "about",
+  "into",
+  "over",
+  "up",
+  "out",
+  "down",
+  "what",
+  "which",
+  "who",
+  "whom",
+  "when",
+  "where",
+  "why",
+  "how",
+  "one",
+  "two",
+  "own",
+  "same",
+  "write",
+  "essay",
+  "discuss",
+  "give",
+  "reasons",
+  "examples",
+  "answer",
+  "question",
+  "following",
+  "include",
+  "words",
+  "least",
 ]);
 
 /** 话题词的同义替换表，避免因用词不同而误判为跑题 */
@@ -137,9 +239,7 @@ export function computeStats(sentences: Sentence[], paragraphs: Paragraph[]): St
     avgSentenceLength: Number(avg.toFixed(1)),
     sentenceLengths: lengths,
     lengthStdDev: Number(Math.sqrt(variance).toFixed(1)),
-    ttr: contentWords.length
-      ? Number((stems.size / contentWords.length).toFixed(3))
-      : 0,
+    ttr: contentWords.length ? Number((stems.size / contentWords.length).toFixed(3)) : 0,
     contentWordCount: contentWords.length,
     uniqueContent: stems.size,
   };
@@ -158,7 +258,15 @@ export interface CohesionAnalysis {
   mechanicalOpeners: { sentenceId: string; opener: string }[];
 }
 
-const REFERENCE_WORDS = ["this", "these", "such", "the former", "the latter", "the above", "which"];
+const REFERENCE_WORDS = [
+  "this",
+  "these",
+  "such",
+  "the former",
+  "the latter",
+  "the above",
+  "which",
+];
 
 export function analyzeCohesion(sentences: Sentence[]): CohesionAnalysis {
   const hits: CohesionAnalysis["hits"] = [];
@@ -167,7 +275,10 @@ export function analyzeCohesion(sentences: Sentence[]): CohesionAnalysis {
     const lower = s.text.toLowerCase();
     for (const [category, terms] of Object.entries(LINKERS)) {
       for (const term of terms) {
-        const re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g");
+        const re = new RegExp(
+          `\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+          "g",
+        );
         const count = (lower.match(re) ?? []).length;
         for (let i = 0; i < count; i += 1) {
           hits.push({ term, category, sentenceId: s.id });
@@ -316,10 +427,32 @@ export interface GrammarAnalysis {
 }
 
 const SUBORDINATORS = [
-  "although", "though", "even though", "while", "whereas", "because", "since",
-  "unless", "until", "provided", "if", "when", "whenever", "after", "before",
-  "once", "as long as", "in order that", "so that", "which", "who", "whom",
-  "whose", "that", "where", "why",
+  "although",
+  "though",
+  "even though",
+  "while",
+  "whereas",
+  "because",
+  "since",
+  "unless",
+  "until",
+  "provided",
+  "if",
+  "when",
+  "whenever",
+  "after",
+  "before",
+  "once",
+  "as long as",
+  "in order that",
+  "so that",
+  "which",
+  "who",
+  "whom",
+  "whose",
+  "that",
+  "where",
+  "why",
 ];
 
 export function analyzeGrammar(sentences: Sentence[]): GrammarAnalysis {
@@ -348,20 +481,44 @@ export function analyzeGrammar(sentences: Sentence[]): GrammarAnalysis {
 export interface VarietyAnalysis {
   complexCount: number;
   complexRatio: number;
-  structures: { name: string; found: boolean; example?: { sentenceId: string; quote: string } }[];
+  structures: {
+    name: string;
+    found: boolean;
+    example?: { sentenceId: string; quote: string };
+  }[];
   openerRepetition: { word: string; count: number }[];
   lengthVariety: number;
 }
 
 const STRUCTURE_PATTERNS: { name: string; pattern: RegExp }[] = [
   { name: "定语从句 (which/that/who)", pattern: /\b(which|who|whose)\b|,\s*that\b/i },
-  { name: "分词短语", pattern: /(^|[,\s])((?:[A-Za-z]+ing)|(?:[A-Za-z]+ed))\s+[a-z]+\s/i },
-  { name: "被动语态", pattern: /\b(is|are|was|were|be|been|being)\s+(?:[a-z]+ed|[a-z]+en|built|made|done|given|taken|seen|shown)\b/i },
+  {
+    name: "分词短语",
+    pattern: /(^|[,\s])((?:[A-Za-z]+ing)|(?:[A-Za-z]+ed))\s+[a-z]+\s/i,
+  },
+  {
+    name: "被动语态",
+    pattern:
+      /\b(is|are|was|were|be|been|being)\s+(?:[a-z]+ed|[a-z]+en|built|made|done|given|taken|seen|shown)\b/i,
+  },
   { name: "条件句", pattern: /\b(if|unless|provided that|should|were to)\b/i },
-  { name: "让步状语从句", pattern: /\b(although|even though|whereas|while|despite|in spite of|notwithstanding)\b/i },
-  { name: "倒装 / 强调句", pattern: /\b(not only|never before|rarely|seldom|it is \w+ that|what .{1,30} is)\b/i },
-  { name: "名词化结构", pattern: /\b(the \w+(tion|ment|ance|ence|ity|ness|ism|ship|age)\b)/i },
-  { name: "类比与倍数", pattern: /\b(twice as|three times|as \w+ as|the more|the less)\b/i },
+  {
+    name: "让步状语从句",
+    pattern:
+      /\b(although|even though|whereas|while|despite|in spite of|notwithstanding)\b/i,
+  },
+  {
+    name: "倒装 / 强调句",
+    pattern: /\b(not only|never before|rarely|seldom|it is \w+ that|what .{1,30} is)\b/i,
+  },
+  {
+    name: "名词化结构",
+    pattern: /\b(the \w+(tion|ment|ance|ence|ity|ness|ism|ship|age)\b)/i,
+  },
+  {
+    name: "类比与倍数",
+    pattern: /\b(twice as|three times|as \w+ as|the more|the less)\b/i,
+  },
   { name: "虚拟/推测", pattern: /\b(would|could|might|may)\s+[a-z]+\b/i },
 ];
 
@@ -436,16 +593,13 @@ export function analyzeTemplates(sentences: Sentence[]): TemplateReport {
   const penalties = hits.reduce((a, h) => a + h.penalty, 0);
   // 每 100 词允许 0.3 的容差
   const tolerance = (coverage / 100) * 0.003;
-  const originality = clamp(
-    Math.round(100 - (penalties - tolerance) * 45),
-    20,
-    100,
-  );
+  const originality = clamp(Math.round(100 - (penalties - tolerance) * 45), 20, 100);
 
   let verdict: string;
   if (hits.length === 0) verdict = "未检测到模板句，语言组织自然。";
   else if (originality >= 85) verdict = "整体自然，仅有零星套话，不影响评分。";
-  else if (originality >= 65) verdict = "存在可识别的模板痕迹，考官可能据此判断为备考范文改写。";
+  else if (originality >= 65)
+    verdict = "存在可识别的模板痕迹，考官可能据此判断为备考范文改写。";
   else verdict = "模板痕迹明显，任务回应项的分数上限会被明显压低。";
 
   return { originality, verdict, hits };
@@ -456,20 +610,51 @@ export function analyzeTemplates(sentences: Sentence[]): TemplateReport {
  * ------------------------------------------------------------------ */
 
 const INSTRUCTION_PATTERNS: { id: string; pattern: RegExp; label: string }[] = [
-  { id: "discuss_both", pattern: /discuss both (these )?views|discuss both sides/i, label: "讨论双方观点并给出自己的看法" },
-  { id: "to_what_extent", pattern: /to what extent/i, label: "在多大程度上同意（需给出程度限定）" },
-  { id: "agree_disagree", pattern: /do you agree or disagree|agree or disagree/i, label: "是否同意（需明确立场）" },
-  { id: "advantages_disadvantages", pattern: /advantages? (and|or) disadvantages?/i, label: "利弊讨论" },
-  { id: "positive_negative", pattern: /positive or negative development/i, label: "判断是积极还是消极发展" },
-  { id: "problem_solution", pattern: /(problems?|causes?).{0,40}(solutions?|measures?)|what (problems|measures)/i, label: "问题与解决方案" },
-  { id: "two_part", pattern: /two (different )?questions|both of the following/i, label: "两个子问题都必须回答" },
+  {
+    id: "discuss_both",
+    pattern: /discuss both (these )?views|discuss both sides/i,
+    label: "讨论双方观点并给出自己的看法",
+  },
+  {
+    id: "to_what_extent",
+    pattern: /to what extent/i,
+    label: "在多大程度上同意（需给出程度限定）",
+  },
+  {
+    id: "agree_disagree",
+    pattern: /do you agree or disagree|agree or disagree/i,
+    label: "是否同意（需明确立场）",
+  },
+  {
+    id: "advantages_disadvantages",
+    pattern: /advantages? (and|or) disadvantages?/i,
+    label: "利弊讨论",
+  },
+  {
+    id: "positive_negative",
+    pattern: /positive or negative development/i,
+    label: "判断是积极还是消极发展",
+  },
+  {
+    id: "problem_solution",
+    pattern: /(problems?|causes?).{0,40}(solutions?|measures?)|what (problems|measures)/i,
+    label: "问题与解决方案",
+  },
+  {
+    id: "two_part",
+    pattern: /two (different )?questions|both of the following/i,
+    label: "两个子问题都必须回答",
+  },
   { id: "outweigh", pattern: /outweigh/i, label: "比较哪一方更占优势" },
 ];
 
 const POSITION_MARKERS =
   /\b(i (believe|think|argue|contend|maintain|am convinced|firmly)|in my (view|opinion)|from my perspective|it is my (view|contention)|this essay (will|argues)|my position|i (would )?(agree|disagree))\b/i;
 
-export function extractKeywords(prompt: string): { topic: string[]; instructions: string[] } {
+export function extractKeywords(prompt: string): {
+  topic: string[];
+  instructions: string[];
+} {
   const words = tokenize(prompt)
     .map((w) => w.toLowerCase())
     .filter((w) => w.length >= 4 && !STOPWORDS.has(w));
@@ -480,7 +665,9 @@ export function extractKeywords(prompt: string): { topic: string[]; instructions
   }
   return {
     topic: [...stems.values()].slice(0, 14),
-    instructions: INSTRUCTION_PATTERNS.filter((p) => p.pattern.test(prompt)).map((p) => p.id),
+    instructions: INSTRUCTION_PATTERNS.filter((p) => p.pattern.test(prompt)).map(
+      (p) => p.id,
+    ),
   };
 }
 
@@ -525,7 +712,9 @@ export function analyzeRelevance(
     const p = paragraphs[s.paragraphIndex];
     if (p && (p.role === "introduction" || p.role === "conclusion")) continue;
     const words = tokenize(s.text).map((w) => w.toLowerCase());
-    const contentStems = words.filter((w) => !STOPWORDS.has(w) && w.length >= 4).map(stem);
+    const contentStems = words
+      .filter((w) => !STOPWORDS.has(w) && w.length >= 4)
+      .map(stem);
     if (contentStems.length === 0) continue;
     const overlap = contentStems.filter((st) => promptStems.has(st)).length;
     if (overlap === 0 && contentStems.length >= 6) {
@@ -539,7 +728,13 @@ export function analyzeRelevance(
   }
 
   const needsPosition = instructions.some((i) =>
-    ["to_what_extent", "agree_disagree", "discuss_both", "outweigh", "positive_negative"].includes(i),
+    [
+      "to_what_extent",
+      "agree_disagree",
+      "discuss_both",
+      "outweigh",
+      "positive_negative",
+    ].includes(i),
   );
   const positionSentence = sentences.find((s) => POSITION_MARKERS.test(s.text));
   const position: RelevanceReport["position"] = {
@@ -559,7 +754,8 @@ export function analyzeRelevance(
 
   let verdict: string;
   if (score >= 85) verdict = "扣题紧密，题目关键词覆盖充分。";
-  else if (score >= 70) verdict = "基本扣题，但部分核心概念没有展开，存在答非所问的风险。";
+  else if (score >= 70)
+    verdict = "基本扣题，但部分核心概念没有展开，存在答非所问的风险。";
   else if (score >= 50) verdict = "扣题度不足，题目要求的若干关键角度未涉及。";
   else verdict = "严重偏题，考官会判定为未完成任务。";
 
@@ -578,6 +774,76 @@ export function analyzeRelevance(
  * 8. 批注生成：把规则命中转成可接受 / 可忽略的修改建议
  * ------------------------------------------------------------------ */
 
+/** 确保文本以句末标点结尾 */
+function ensureSentence(text: string): string {
+  const t = text.trim();
+  if (!t) return t;
+  return /[.!?]$/.test(t) ? t : `${t}.`;
+}
+
+/**
+ * 找出某个句子所属段落对应的听力论点。
+ *
+ * 段落里通常已经转述了阅读观点，所以先用「段落文本 − 本句」去匹配阅读论点，
+ * 命中后再取同序号的听力论点。这样即使考生没写引言段、段落顺序有偏移，
+ * 也能正确对上，比直接用「段落序号 − 1」鲁棒得多。
+ */
+function matchListeningPoint(
+  sentence: Sentence,
+  sentences: Sentence[],
+  paragraphs: Paragraph[],
+  listeningPoints: string[],
+  readingPoints: string[],
+): string | null {
+  if (listeningPoints.length === 0) return null;
+
+  const fallback = (): string | null => {
+    const idx = sentence.paragraphIndex - 1;
+    return idx >= 0 && idx < listeningPoints.length ? listeningPoints[idx] : null;
+  };
+
+  const para = paragraphs[sentence.paragraphIndex];
+  if (!para || readingPoints.length === 0) return fallback();
+
+  const paraText = para.sentenceIds
+    .filter((id) => id !== sentence.id)
+    .map((id) => sentences.find((s) => s.id === id)?.text ?? "")
+    .join(" ");
+
+  if (!paraText.trim()) return fallback();
+
+  const hay = new Set(
+    tokenize(paraText)
+      .map((w) => w.toLowerCase())
+      .filter((w) => !STOPWORDS.has(w))
+      .map(stem),
+  );
+
+  let bestIndex = -1;
+  let bestScore = 0;
+  readingPoints.forEach((point, i) => {
+    const keys = [
+      ...new Set(
+        tokenize(point)
+          .map((w) => w.toLowerCase())
+          .filter((w) => w.length >= 4 && !STOPWORDS.has(w))
+          .map(stem),
+      ),
+    ];
+    if (keys.length === 0) return;
+    const score = keys.filter((k) => hay.has(k)).length / keys.length;
+    if (score > bestScore) {
+      bestScore = score;
+      bestIndex = i;
+    }
+  });
+
+  if (bestIndex >= 0 && bestScore >= 0.2 && bestIndex < listeningPoints.length) {
+    return listeningPoints[bestIndex];
+  }
+  return fallback();
+}
+
 export function buildAnnotations(ctx: {
   sentences: Sentence[];
   paragraphs: Paragraph[];
@@ -586,8 +852,21 @@ export function buildAnnotations(ctx: {
   topics: Topic[];
   usedTopicPhrases: string[];
   repetitions: { word: string; count: number }[];
+  /** 托福综合写作：用于把「只说了一句不同意」补成完整的听力反驳 */
+  listeningPoints?: string[];
+  readingPoints?: string[];
 }): Annotation[] {
-  const { sentences, paragraphs, taskType, exam, topics, usedTopicPhrases, repetitions } = ctx;
+  const {
+    sentences,
+    paragraphs,
+    taskType,
+    exam,
+    topics,
+    usedTopicPhrases,
+    repetitions,
+    listeningPoints = [],
+    readingPoints = [],
+  } = ctx;
   const out: Annotation[] = [];
   const perSentence = new Map<string, number>();
   const usedRules = new Set<string>();
@@ -635,9 +914,7 @@ export function buildAnnotations(ctx: {
       const id = `${rule.id}:${s.id}`;
       if (usedRules.has(id)) continue;
       usedRules.add(id);
-      const replacement = rule.replacement
-        ? preserveCase(matched, rule.replacement)
-        : "";
+      const replacement = rule.replacement ? preserveCase(matched, rule.replacement) : "";
       push({
         id,
         sentenceId: s.id,
@@ -663,18 +940,39 @@ export function buildAnnotations(ctx: {
       const id = `${rule.id}:${s.id}`;
       if (usedRules.has(id)) continue;
       usedRules.add(id);
+
+      // 空泛的反驳句可以直接补全：拿同段落对应的听力论点生成改写，
+      // 这样「只说了一句不同意」也能一键接受，而不只是一条泛泛的提醒。
+      let replacement = "";
+      let reason = rule.reason;
+      let examinerNote = rule.examinerNote;
+      if (rule.id === "adv_vague_rebuttal") {
+        const point = matchListeningPoint(
+          s,
+          sentences,
+          paragraphs,
+          listeningPoints,
+          readingPoints,
+        );
+        if (point) {
+          replacement = `The professor, however, challenges this claim. ${ensureSentence(point)}`;
+          reason = `${rule.reason}这一次可以直接补全：根据你填写的听力论点，这句话应该展开成下面的内容。`;
+          examinerNote = `${rule.examinerNote}注意：这里给的是「应该写出的信息」，请用你自己的句子重新组织，不要照抄——考官对模板化转述同样敏感。`;
+        }
+      }
+
       push({
         id,
         sentenceId: s.id,
         target: s.text,
-        replacement: "",
+        replacement,
         dimension: rule.dimension,
         tag: rule.tag,
         severity: rule.severity,
         lift: rule.lift,
         liftText: liftText(rule.dimension, rule.lift),
-        reason: rule.reason,
-        examinerNote: rule.examinerNote,
+        reason,
+        examinerNote,
         status: "pending",
       });
     }
@@ -803,7 +1101,13 @@ export function suggestSplit(text: string): string | null {
     const tail = text.slice(idx + c.length).trim();
     if (!head || !tail) continue;
     const connector =
-      c === ", but " ? "However, " : c === ", so " ? "Consequently, " : c === ", which " ? "This " : "";
+      c === ", but "
+        ? "However, "
+        : c === ", so "
+          ? "Consequently, "
+          : c === ", which "
+            ? "This "
+            : "";
     const newTail = connector ? capitalize(connector + tail) : capitalize(tail);
     return `${head}. ${newTail}`;
   }
@@ -948,7 +1252,8 @@ export function deriveFacts(
   taskType: TaskType,
   coverage?: CoverageReport,
 ): Fact[] {
-  const { stats, cohesion, lexis, grammar, variety, template, relevance, topics } = bundle;
+  const { stats, cohesion, lexis, grammar, variety, template, relevance, topics } =
+    bundle;
   const facts: Fact[] = [];
   const first = (id: string) => bundle.sentences.find((s) => s.id === id);
   const isIelts = exam === "ielts";
@@ -970,7 +1275,13 @@ export function deriveFacts(
       code: "LOW_RELEVANCE",
       dimension: isIelts ? "TR" : "TF",
       severity: relevance.score < 50 ? "high" : "medium",
-      detail: `扣题度 ${relevance.score}/100。题目核心概念未充分覆盖：${relevance.keywords.filter((k) => !k.hit && k.kind === "topic").map((k) => k.term).slice(0, 5).join("、") || "无"}`,
+      detail: `扣题度 ${relevance.score}/100。题目核心概念未充分覆盖：${
+        relevance.keywords
+          .filter((k) => !k.hit && k.kind === "topic")
+          .map((k) => k.term)
+          .slice(0, 5)
+          .join("、") || "无"
+      }`,
       metric: `扣题度 ${relevance.score}`,
       delta: relevance.score < 50 ? -1 : -0.5,
     });
@@ -982,7 +1293,9 @@ export function deriveFacts(
       severity: "high",
       detail: "题型要求明确立场，但全文未识别到可定位的立场句。",
       delta: -0.5,
-      ...(bundle.sentences[0] ? { sentenceId: bundle.sentences[0].id, quote: bundle.sentences[0].text } : {}),
+      ...(bundle.sentences[0]
+        ? { sentenceId: bundle.sentences[0].id, quote: bundle.sentences[0].text }
+        : {}),
     });
   }
   for (const off of relevance.offTopic.slice(0, 2)) {
@@ -1086,7 +1399,11 @@ export function deriveFacts(
       delta: -0.25,
     });
   }
-  if (cohesion.categoriesUsed.length >= 5 && cohesion.density >= 0.6 && cohesion.density <= 1.2) {
+  if (
+    cohesion.categoriesUsed.length >= 5 &&
+    cohesion.density >= 0.6 &&
+    cohesion.density <= 1.2
+  ) {
     const s = cohesion.hits.find((h) => ["因果", "举例", "转折"].includes(h.category));
     const sen = s ? first(s.sentenceId) : undefined;
     facts.push({
@@ -1227,7 +1544,9 @@ export function deriveFacts(
     });
   }
   if (variety.complexRatio >= 0.45) {
-    const c = bundle.sentences.find((s) => SUBORDINATORS.some((sub) => new RegExp(`\\b${sub}\\b`, "i").test(s.text)));
+    const c = bundle.sentences.find((s) =>
+      SUBORDINATORS.some((sub) => new RegExp(`\\b${sub}\\b`, "i").test(s.text)),
+    );
     facts.push({
       code: "GOOD_COMPLEXITY",
       dimension: isIelts ? "GRA" : "SV",
@@ -1282,7 +1601,11 @@ export function deriveFacts(
   }
 
   const counterPara = bundle.paragraphs.find(
-    (p) => p.role === "body" && /\b(on the other hand|however|opponents?|critics?|those who|others? (argue|believe|claim))\b/i.test(p.text),
+    (p) =>
+      p.role === "body" &&
+      /\b(on the other hand|however|opponents?|critics?|those who|others? (argue|believe|claim))\b/i.test(
+        p.text,
+      ),
   );
   if (counterPara) {
     const anchor = first(counterPara.sentenceIds[0]);
@@ -1329,7 +1652,9 @@ export function deriveFacts(
         detail: `图表中有 ${missingNumbers.length} 个数据点未在文中出现（${missingNumbers
           .slice(0, 4)
           .map((i) => i.label)
-          .join("、")} 等）。Task 1 考察的是「筛选关键信息」的能力，遗漏过多会被判定为数据覆盖不完整。`,
+          .join(
+            "、",
+          )} 等）。Task 1 考察的是「筛选关键信息」的能力，遗漏过多会被判定为数据覆盖不完整。`,
         metric: `遗漏 ${missingNumbers.length} 个数据点`,
         delta: -0.5,
       });
@@ -1345,7 +1670,9 @@ export function deriveFacts(
         severity: "high",
         detail: `有 ${missingRebuttals.length} 个听力反驳点未被转述（${missingRebuttals
           .map((i) => i.label)
-          .join("、")}）。综合写作的评分核心是听力材料的还原度，阅读只是背景——遗漏反驳点是最严重的失分方式。`,
+          .join(
+            "、",
+          )}）。综合写作的评分核心是听力材料的还原度，阅读只是背景——遗漏反驳点是最严重的失分方式。`,
         metric: `遗漏 ${missingRebuttals.length} 个反驳点`,
         delta: -1,
       });
@@ -1397,9 +1724,7 @@ function baselineFacts(
     ? sentences.find((s) => s.id === paragraphs[0].sentenceIds[0])
     : sentences[0];
   const lastAnchor = paragraphs.length
-    ? sentences.find(
-        (s) => s.id === paragraphs[paragraphs.length - 1].sentenceIds[0],
-      )
+    ? sentences.find((s) => s.id === paragraphs[paragraphs.length - 1].sentenceIds[0])
     : undefined;
 
   const plan: { dimension: DimensionId; facts: Omit<Fact, "dimension">[] }[] = [

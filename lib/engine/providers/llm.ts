@@ -41,7 +41,10 @@ const VALID_DIMENSIONS: DimensionId[] = ["TR", "CC", "LR", "GRA", "TF", "OD", "L
 
 export function llmConfig() {
   return {
-    baseUrl: (process.env.LEXSCORE_LLM_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, ""),
+    baseUrl: (process.env.LEXSCORE_LLM_BASE_URL || "https://api.openai.com/v1").replace(
+      /\/$/,
+      "",
+    ),
     apiKey: process.env.LEXSCORE_LLM_API_KEY || "",
     model: process.env.LEXSCORE_LLM_MODEL || "gpt-4o-mini",
     timeoutMs: Number(process.env.LEXSCORE_LLM_TIMEOUT_MS || 90000),
@@ -97,7 +100,9 @@ function coerceDimensions(raw: RawPlan, ctx: GradeContext): DimensionScore[] {
       return {
         sentenceId: e.sentenceId ?? "",
         quote: sentence?.text ?? "",
-        polarity: (Number(e.delta ?? 0) >= 0 ? "positive" : "negative") as Evidence["polarity"],
+        polarity: (Number(e.delta ?? 0) >= 0
+          ? "positive"
+          : "negative") as Evidence["polarity"],
         comment: e.comment ?? "",
         metric: e.metric,
         delta: Number(e.delta ?? 0),
@@ -110,7 +115,10 @@ function coerceDimensions(raw: RawPlan, ctx: GradeContext): DimensionScore[] {
       labelEn: meta.labelEn,
       score,
       max: meta.max,
-      bandLabel: ctx.input.exam === "ielts" ? `Band ${score.toFixed(1)}` : `${score.toFixed(1)} / 5.0`,
+      bandLabel:
+        ctx.input.exam === "ielts"
+          ? `Band ${score.toFixed(1)}`
+          : `${score.toFixed(1)} / 5.0`,
       summary: found?.summary ?? "",
       evidences,
     };
@@ -213,9 +221,7 @@ export const llmProvider: GraderProvider = {
   async score(ctx: GradeContext): Promise<ScoringPlan> {
     const cfg = llmConfig();
     const coverageText = ctx.coverage
-      ? ctx.coverage.items
-          .map((i) => `- [${i.status}] ${i.label}：${i.note}`)
-          .join("\n")
+      ? ctx.coverage.items.map((i) => `- [${i.status}] ${i.label}：${i.note}`).join("\n")
       : "";
 
     const prompt = buildGradingPrompt(ctx.input, ctx.bundle, coverageText);

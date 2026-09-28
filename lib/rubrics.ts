@@ -1,9 +1,4 @@
-import type {
-  DimensionId,
-  DimensionMeta,
-  ExamType,
-  TaskType,
-} from "./types";
+import type { DimensionId, DimensionMeta, ExamType, TaskType } from "./types";
 
 /**
  * 评分标准（rubric）对齐层。
@@ -157,26 +152,13 @@ export const TASK_REQUIREMENTS: Record<TaskType, TaskRequirement> = {
   ielts_task1: {
     minWords: 150,
     recommendedMax: 220,
-    instructions: [
-      "overview",
-      "max",
-      "min",
-      "trend",
-      "comparison",
-      "no_opinion",
-    ],
+    instructions: ["overview", "max", "min", "trend", "comparison", "no_opinion"],
     minutes: 20,
   },
   ielts_task2: {
     minWords: 250,
     recommendedMax: 340,
-    instructions: [
-      "position",
-      "both_views",
-      "discuss_both",
-      "example",
-      "conclusion",
-    ],
+    instructions: ["position", "both_views", "discuss_both", "example", "conclusion"],
     minutes: 40,
   },
   toefl_integrated: {

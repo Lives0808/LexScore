@@ -7,14 +7,53 @@ import { countWords, stem, tokenize } from "./segment";
  * ------------------------------------------------------------------ */
 
 const STOPWORDS = new Set([
-  "the", "a", "an", "and", "or", "but", "of", "to", "in", "on", "for", "with",
-  "as", "by", "at", "from", "that", "this", "is", "are", "was", "were", "be",
-  "it", "its", "which", "than", "then", "there", "more", "most", "was",
-  "were", "been", "has", "have", "had", "will", "would", "can", "could",
+  "the",
+  "a",
+  "an",
+  "and",
+  "or",
+  "but",
+  "of",
+  "to",
+  "in",
+  "on",
+  "for",
+  "with",
+  "as",
+  "by",
+  "at",
+  "from",
+  "that",
+  "this",
+  "is",
+  "are",
+  "was",
+  "were",
+  "be",
+  "it",
+  "its",
+  "which",
+  "than",
+  "then",
+  "there",
+  "more",
+  "most",
+  "was",
+  "were",
+  "been",
+  "has",
+  "have",
+  "had",
+  "will",
+  "would",
+  "can",
+  "could",
 ]);
 
 /** 从图表数据里抽出所有数值（保留百分号信息，用于回查） */
-function extractNumbers(text: string): { raw: string; value: number; percent: boolean }[] {
+function extractNumbers(
+  text: string,
+): { raw: string; value: number; percent: boolean }[] {
   const out = new Map<string, { raw: string; value: number; percent: boolean }>();
   const re = /(\d+(?:[.,]\d+)?)\s*(%|percent|million|billion|thousand)?/gi;
   for (const m of text.matchAll(re)) {
@@ -39,10 +78,7 @@ function numberMentioned(sentences: Sentence[], value: number): Sentence | undef
   });
 }
 
-function firstCueSentence(
-  sentences: Sentence[],
-  cues: string[],
-): Sentence | undefined {
+function firstCueSentence(sentences: Sentence[], cues: string[]): Sentence | undefined {
   return sentences.find((s) => {
     const lower = s.text.toLowerCase();
     return cues.some((c) => lower.includes(c.toLowerCase()));
@@ -240,7 +276,12 @@ function bestMatch(
   if (keys.length === 0 || candidates.length === 0) return null;
 
   const stemsPerSentence = candidates.map(
-    (s) => new Set(tokenize(s.text).map((w) => w.toLowerCase()).map(stem)),
+    (s) =>
+      new Set(
+        tokenize(s.text)
+          .map((w) => w.toLowerCase())
+          .map(stem),
+      ),
   );
 
   const weightOf = (key: string): number => {
@@ -443,7 +484,12 @@ export function analyzeIntegratedCoverage(
     group: "转述框架",
     label: "标记反驳关系",
     detail: "however / refutes / contradicts 等",
-    status: refuteMarkers.length >= 2 ? "covered" : refuteMarkers.length === 1 ? "partial" : "missing",
+    status:
+      refuteMarkers.length >= 2
+        ? "covered"
+        : refuteMarkers.length === 1
+          ? "partial"
+          : "missing",
     evidenceSentenceId: refuteSentence?.id,
     evidenceQuote: refuteSentence?.text,
     note:
@@ -487,12 +533,18 @@ export function analyzeConstraints(
   minWords: number,
   taskType: string,
 ): { id: string; label: string; status: "pass" | "warn" | "fail"; detail: string }[] {
-  const out: { id: string; label: string; status: "pass" | "warn" | "fail"; detail: string }[] = [];
+  const out: {
+    id: string;
+    label: string;
+    status: "pass" | "warn" | "fail";
+    detail: string;
+  }[] = [];
 
   out.push({
     id: "words",
     label: `字数（要求 ≥ ${minWords}）`,
-    status: wordCount >= minWords ? "pass" : wordCount >= minWords * 0.9 ? "warn" : "fail",
+    status:
+      wordCount >= minWords ? "pass" : wordCount >= minWords * 0.9 ? "warn" : "fail",
     detail:
       wordCount >= minWords
         ? `当前 ${wordCount} 词，达到要求。注意不要为了凑字数堆砌内容，超出建议上限会稀释论点密度。`

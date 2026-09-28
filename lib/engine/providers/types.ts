@@ -16,7 +16,12 @@ export interface GradeContext {
   bundle: AnalysisBundle;
   facts: Fact[];
   coverage?: CoverageReport;
-  constraints: { id: string; label: string; status: "pass" | "warn" | "fail"; detail: string }[];
+  constraints: {
+    id: string;
+    label: string;
+    status: "pass" | "warn" | "fail";
+    detail: string;
+  }[];
 }
 
 export interface ScoringPlan {

@@ -77,10 +77,7 @@ export function saveReport(report: Report): void {
   if (typeof window === "undefined") return;
   const reports = listReports().filter((r) => r.id !== report.id);
   reports.unshift(report);
-  window.localStorage.setItem(
-    REPORT_KEY,
-    JSON.stringify(reports.slice(0, MAX_REPORTS)),
-  );
+  window.localStorage.setItem(REPORT_KEY, JSON.stringify(reports.slice(0, MAX_REPORTS)));
   notify();
 }
 

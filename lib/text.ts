@@ -77,10 +77,7 @@ export interface PreviewSegment {
 }
 
 /** 生成「修改版」：已接受的替换直接生效，待处理的只做标记 */
-export function buildPreview(
-  sentenceText: string,
-  spans: Span[],
-): PreviewSegment[] {
+export function buildPreview(sentenceText: string, spans: Span[]): PreviewSegment[] {
   const segments: PreviewSegment[] = [];
   let cursor = 0;
 
@@ -108,10 +105,7 @@ export function buildPreview(
 }
 
 /** 应用所有已接受的替换，得到最终文本（用于复制导出） */
-export function applyAccepted(
-  sentenceText: string,
-  annotations: Annotation[],
-): string {
+export function applyAccepted(sentenceText: string, annotations: Annotation[]): string {
   const spans = resolveSpans(sentenceText, annotations).filter(
     (s) => s.annotation.status === "accepted" && s.annotation.replacement,
   );

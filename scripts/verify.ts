@@ -43,7 +43,9 @@ async function main() {
       );
     }
     check(unlocatable === 0, `${unlocatable} 条批注无法定位到原文`);
-    console.log(`  批注 ${report.annotations.length} 条，全部可定位：${unlocatable === 0}`);
+    console.log(
+      `  批注 ${report.annotations.length} 条，全部可定位：${unlocatable === 0}`,
+    );
 
     // 2. 评分依据：引用必须来自被指向的句子
     let badQuote = 0;
@@ -86,7 +88,9 @@ async function main() {
         if (spans[i].start < spans[i - 1].end) spanErrors += 1;
       }
       // 切分后的片段必须能无损拼回原文
-      const rejoined = toSegments(s.text, spans).map((x) => x.text).join("");
+      const rejoined = toSegments(s.text, spans)
+        .map((x) => x.text)
+        .join("");
       check(rejoined === s.text, `句子 ${s.id} 的原文切分无法还原`);
 
       // 修改版预览同样必须可还原（未接受时等于原文）
@@ -100,20 +104,13 @@ async function main() {
 
     // 5. 语料与诊断完整性
     check(report.corpus.length > 0, "语料库为空");
-    check(
-      report.relevance.keywords.length > 0,
-      "扣题度诊断没有提取出任何关键词",
-    );
+    check(report.relevance.keywords.length > 0, "扣题度诊断没有提取出任何关键词");
     console.log(
       `  语料 ${report.corpus.length} 条 · 扣题关键词 ${report.relevance.keywords.length} 个 · 模板命中 ${report.template.hits.length} 处`,
     );
   }
 
-  console.log(
-    failures === 0
-      ? "\n✓ 全部校验通过"
-      : `\n✗ 共 ${failures} 项校验失败`,
-  );
+  console.log(failures === 0 ? "\n✓ 全部校验通过" : `\n✗ 共 ${failures} 项校验失败`);
   process.exit(failures === 0 ? 0 : 1);
 }
 

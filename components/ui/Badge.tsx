@@ -69,7 +69,7 @@ export function ScoreBar({
     warn: "bg-warn",
   };
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-line">
+    <div className="bg-line h-1.5 w-full overflow-hidden rounded-full">
       <div
         className={`h-full rounded-full ${colors[tone]}`}
         style={{ width: `${pct}%` }}

@@ -8,10 +8,7 @@
 export type ExamType = "ielts" | "toefl";
 
 export type TaskType =
-  | "ielts_task1"
-  | "ielts_task2"
-  | "toefl_integrated"
-  | "toefl_discussion";
+  "ielts_task1" | "ielts_task2" | "toefl_integrated" | "toefl_discussion";
 
 /** 雅思 TR/CC/LR/GRA；托福 TF/OD/LU/SV */
 export type DimensionId = "TR" | "CC" | "LR" | "GRA" | "TF" | "OD" | "LU" | "SV";
@@ -71,12 +68,7 @@ export interface Sentence {
 }
 
 export type ParagraphRole =
-  | "introduction"
-  | "overview"
-  | "body"
-  | "counter"
-  | "conclusion"
-  | "unknown";
+  "introduction" | "overview" | "body" | "counter" | "conclusion" | "unknown";
 
 export interface Paragraph {
   index: number;

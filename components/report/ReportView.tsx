@@ -58,13 +58,13 @@ export default function ReportView({ reportId }: { reportId: string }) {
   if (missing) {
     return (
       <div className="mx-auto max-w-[640px] px-5 py-24 text-center">
-        <h1 className="text-[18px] font-semibold text-ink">找不到这份批改记录</h1>
-        <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
+        <h1 className="text-ink text-[18px] font-semibold">找不到这份批改记录</h1>
+        <p className="text-ink-soft mt-2 text-[13px] leading-relaxed">
           批改结果保存在本机浏览器中。如果更换了浏览器或清理过缓存，记录就会丢失。
         </p>
         <Link
           href="/"
-          className="mt-5 inline-block rounded-lg bg-accent px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90"
+          className="bg-accent mt-5 inline-block rounded-lg px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90"
         >
           返回批改
         </Link>
@@ -74,7 +74,7 @@ export default function ReportView({ reportId }: { reportId: string }) {
 
   if (!report || !stats) {
     return (
-      <div className="mx-auto max-w-[640px] px-5 py-24 text-center text-[13px] text-ink-faint">
+      <div className="text-ink-faint mx-auto max-w-[640px] px-5 py-24 text-center text-[13px]">
         加载中…
       </div>
     );
@@ -102,32 +102,30 @@ export default function ReportView({ reportId }: { reportId: string }) {
               {new Date(report.createdAt).toLocaleString("zh-CN")}
             </Badge>
           </div>
-          <h1 className="mt-3 text-[15px] leading-relaxed font-medium text-ink">
+          <h1 className="text-ink mt-3 text-[15px] leading-relaxed font-medium">
             {report.prompt.length > 180
               ? `${report.prompt.slice(0, 180)}…`
               : report.prompt}
           </h1>
         </div>
 
-        <div className="flex items-center gap-5 rounded-xl border border-line bg-card px-5 py-4">
+        <div className="border-line bg-card flex w-full items-center gap-4 rounded-xl border px-4 py-4 sm:gap-5 lg:w-auto lg:px-5">
           <div className="text-center">
-            <div className="text-[34px] leading-none font-semibold tracking-tight text-ink">
-              {report.exam === "ielts"
-                ? report.overall.toFixed(1)
-                : report.overall}
+            <div className="text-ink text-[30px] leading-none font-semibold tracking-tight sm:text-[34px]">
+              {report.exam === "ielts" ? report.overall.toFixed(1) : report.overall}
             </div>
-            <div className="mt-1.5 text-[11px] text-ink-faint">
+            <div className="text-ink-faint mt-1.5 text-[11px]">
               {report.exam === "ielts" ? "Overall Band" : "总分 / 30"}
             </div>
           </div>
-          <div className="h-12 w-px bg-line" />
-          <div className="space-y-1">
+          <div className="bg-line h-12 w-px shrink-0" />
+          <div className="min-w-0 flex-1 space-y-1 lg:flex-none">
             {report.dimensions.map((d) => (
               <div key={d.dimension} className="flex items-center gap-2">
-                <span className="w-[104px] truncate text-[11.5px] text-ink-soft">
+                <span className="text-ink-soft flex-1 truncate text-[11.5px] lg:w-[104px] lg:flex-none">
                   {DIMENSION_LABELS[d.dimension] ?? d.label}
                 </span>
-                <span className="text-[12px] font-semibold tabular-nums text-ink">
+                <span className="text-ink text-[12px] font-semibold tabular-nums">
                   {d.score}
                 </span>
               </div>
@@ -137,18 +135,16 @@ export default function ReportView({ reportId }: { reportId: string }) {
       </div>
 
       {/* 总评 */}
-      <section className="mt-6 rounded-xl border border-line bg-card p-5">
-        <h2 className="text-[13px] font-semibold text-ink">考官式总评</h2>
-        <p className="mt-2 text-[13px] leading-[1.9] text-ink-soft">
-          {report.summary}
-        </p>
+      <section className="border-line bg-card mt-6 rounded-xl border p-5">
+        <h2 className="text-ink text-[13px] font-semibold">考官式总评</h2>
+        <p className="text-ink-soft mt-2 text-[13px] leading-[1.9]">{report.summary}</p>
       </section>
 
       {/* 四维评分 */}
       <section className="mt-6">
         <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-[15px] font-semibold text-ink">四维评分</h2>
-          <span className="text-[11.5px] text-ink-faint">
+          <h2 className="text-ink text-[15px] font-semibold">四维评分</h2>
+          <span className="text-ink-faint text-[11.5px]">
             展开可查看每一项的评分依据与原文引用
           </span>
         </div>
@@ -162,19 +158,16 @@ export default function ReportView({ reportId }: { reportId: string }) {
       {/* 逐句批注 */}
       <section className="mt-9">
         <div className="mb-3 flex flex-wrap items-center gap-3">
-          <h2 className="text-[15px] font-semibold text-ink">逐句对照批注</h2>
-          <span className="text-[11.5px] text-ink-faint">
-            悬浮高亮处查看原因 · 单条可接受或忽略
-          </span>
+          <h2 className="text-ink text-[15px] font-semibold">逐句对照批注</h2>
 
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-lg border border-line bg-card p-0.5">
+          <div className="flex w-full flex-wrap items-center gap-2 lg:ml-auto lg:w-auto">
+            <div className="border-line bg-card inline-flex overflow-x-auto rounded-lg border p-0.5">
               {STATUS_FILTERS.map((f) => (
                 <button
                   key={f.id}
                   type="button"
                   onClick={() => setStatus(f.id)}
-                  className={`rounded-[6px] px-2.5 py-1 text-[11.5px] transition ${
+                  className={`shrink-0 rounded-[6px] px-2.5 py-1.5 text-[11.5px] whitespace-nowrap transition ${
                     status === f.id
                       ? "bg-accent text-white"
                       : "text-ink-soft hover:text-ink"
@@ -188,7 +181,7 @@ export default function ReportView({ reportId }: { reportId: string }) {
             <select
               value={dimension ?? ""}
               onChange={(e) => setDimension(e.target.value || null)}
-              className="rounded-lg border border-line bg-card px-2.5 py-1.5 text-[11.5px] text-ink-soft outline-none focus:border-accent"
+              className="border-line bg-card text-ink-soft focus:border-accent min-w-0 flex-1 rounded-lg border px-2.5 py-1.5 text-[11.5px] outline-none lg:flex-none"
             >
               <option value="">全部评分项</option>
               {report.dimensions.map((d) => (
@@ -201,14 +194,14 @@ export default function ReportView({ reportId }: { reportId: string }) {
         </div>
 
         {/* 进度条 */}
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-card px-4 py-3">
-          <span className="text-[12px] text-ink-soft">
-            共 <b className="text-ink">{stats.total}</b> 条批注 ·
-            待处理 <b className="text-accent">{stats.pending}</b> ·
-            已接受 <b className="text-pos">{stats.accepted}</b> ·
-            已忽略 <b className="text-ink-faint">{stats.ignored}</b>
+        <div className="border-line bg-card mb-4 flex flex-wrap items-center gap-x-3 gap-y-2.5 rounded-xl border px-4 py-3">
+          <span className="text-ink-soft text-[12px]">
+            共 <b className="text-ink">{stats.total}</b> 条批注 · 待处理{" "}
+            <b className="text-accent">{stats.pending}</b> · 已接受{" "}
+            <b className="text-pos">{stats.accepted}</b> · 已忽略{" "}
+            <b className="text-ink-faint">{stats.ignored}</b>
           </span>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex w-full items-center gap-2 lg:ml-auto lg:w-auto">
             <button
               type="button"
               onClick={() => {
@@ -219,7 +212,7 @@ export default function ReportView({ reportId }: { reportId: string }) {
                 }
               }}
               disabled={stats.actionable === 0}
-              className="rounded-lg border border-line px-3 py-1.5 text-[11.5px] text-ink-soft transition hover:border-pos hover:text-pos disabled:opacity-40"
+              className="border-line text-ink-soft hover:border-pos hover:text-pos flex-1 rounded-lg border px-3 py-2 text-[12px] transition disabled:opacity-40 lg:flex-none lg:py-1.5 lg:text-[11.5px]"
             >
               全部接受
             </button>
@@ -230,7 +223,7 @@ export default function ReportView({ reportId }: { reportId: string }) {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1800);
               }}
-              className="rounded-lg bg-accent px-3 py-1.5 text-[11.5px] font-medium text-white transition hover:opacity-90"
+              className="bg-accent flex-1 rounded-lg px-3 py-2 text-[12px] font-medium text-white transition hover:opacity-90 lg:flex-none lg:py-1.5 lg:text-[11.5px]"
             >
               {copied ? "已复制" : "复制修改稿"}
             </button>
@@ -248,7 +241,7 @@ export default function ReportView({ reportId }: { reportId: string }) {
 
       {/* 结构诊断 */}
       <section className="mt-9">
-        <h2 className="mb-3 text-[15px] font-semibold text-ink">结构诊断</h2>
+        <h2 className="text-ink mb-3 text-[15px] font-semibold">结构诊断</h2>
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-4">
             <RelevancePanel relevance={report.relevance} onJump={jump} />
@@ -267,13 +260,11 @@ export default function ReportView({ reportId }: { reportId: string }) {
       {report.corpus.length > 0 && (
         <section className="mt-9">
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-[15px] font-semibold text-ink">
-              已沉淀到个人语料库
-            </h2>
+            <h2 className="text-ink text-[15px] font-semibold">已沉淀到个人语料库</h2>
             <button
               type="button"
               onClick={() => router.push("/corpus")}
-              className="text-[11.5px] text-accent transition hover:opacity-75"
+              className="text-accent text-[11.5px] transition hover:opacity-75"
             >
               查看语料库 →
             </button>
@@ -282,7 +273,7 @@ export default function ReportView({ reportId }: { reportId: string }) {
             {report.corpus.map((item) => (
               <div
                 key={item.id}
-                className="rounded-lg border border-line bg-card px-3.5 py-3"
+                className="border-line bg-card rounded-lg border px-3.5 py-3"
               >
                 <div className="flex items-center gap-1.5">
                   <Badge
@@ -302,13 +293,13 @@ export default function ReportView({ reportId }: { reportId: string }) {
                   </Badge>
                   {item.topic && <Badge tone="neutral">{item.topic}</Badge>}
                 </div>
-                <p className="mt-2 text-[12.5px] leading-relaxed text-ink">
+                <p className="text-ink mt-2 text-[12.5px] leading-relaxed">
                   {item.text.length > 130 ? `${item.text.slice(0, 130)}…` : item.text}
                 </p>
                 {item.correction && (
-                  <p className="mt-1 text-[12px] text-pos">→ {item.correction}</p>
+                  <p className="text-pos mt-1 text-[12px]">→ {item.correction}</p>
                 )}
-                <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-faint">
+                <p className="text-ink-faint mt-1.5 text-[11.5px] leading-relaxed">
                   {item.note}
                 </p>
               </div>

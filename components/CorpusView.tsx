@@ -16,9 +16,21 @@ import { Badge, ScoreBar } from "./ui/Badge";
 type Bucket = "phrases" | "sentences" | "errors";
 
 const TABS: { id: Bucket; label: string; hint: string }[] = [
-  { id: "phrases", label: "好词与词伙", hint: "文中用对的学术词汇与话题词伙，可直接复用到同话题写作" },
-  { id: "sentences", label: "好句", hint: "复杂句 + 学术词汇且未命中语法规则，可作为改写模板" },
-  { id: "errors", label: "高频错误", hint: "命中规则库的错误，按出现次数排序，优先消除重复项" },
+  {
+    id: "phrases",
+    label: "好词与词伙",
+    hint: "文中用对的学术词汇与话题词伙，可直接复用到同话题写作",
+  },
+  {
+    id: "sentences",
+    label: "好句",
+    hint: "复杂句 + 学术词汇且未命中语法规则，可作为改写模板",
+  },
+  {
+    id: "errors",
+    label: "高频错误",
+    hint: "命中规则库的错误，按出现次数排序，优先消除重复项",
+  },
 ];
 
 export default function CorpusView() {
@@ -33,7 +45,7 @@ export default function CorpusView() {
 
   if (!hydrated) {
     return (
-      <div className="mx-auto max-w-[640px] px-5 py-24 text-center text-[13px] text-ink-faint">
+      <div className="text-ink-faint mx-auto max-w-[640px] px-5 py-24 text-center text-[13px]">
         加载中…
       </div>
     );
@@ -42,14 +54,14 @@ export default function CorpusView() {
   if (reports.length === 0) {
     return (
       <div className="mx-auto max-w-[640px] px-5 py-24 text-center">
-        <h1 className="text-[18px] font-semibold text-ink">语料库还是空的</h1>
-        <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
+        <h1 className="text-ink text-[18px] font-semibold">语料库还是空的</h1>
+        <p className="text-ink-soft mt-2 text-[13px] leading-relaxed">
           每批改一篇作文，LexScore 会自动把其中的好词、好句和反复出现的错误收集到这里。
           批改几篇之后，这里就是你自己的专属语料。
         </p>
         <Link
           href="/"
-          className="mt-5 inline-block rounded-lg bg-accent px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90"
+          className="bg-accent mt-5 inline-block rounded-lg px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90"
         >
           去批改第一篇
         </Link>
@@ -63,10 +75,10 @@ export default function CorpusView() {
     <div className="mx-auto max-w-[1100px] px-5 py-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-ink">
+          <h1 className="text-ink text-[22px] font-semibold tracking-tight">
             我的写作语料库
           </h1>
-          <p className="mt-2 max-w-[560px] text-[13px] leading-relaxed text-ink-soft">
+          <p className="text-ink-soft mt-2 max-w-[560px] text-[13px] leading-relaxed">
             自动从你写过的作文里抽取的专属素材。复习时不用再背通用范文，
             直接用自己写过的、已经被验证过的表达。
           </p>
@@ -78,7 +90,7 @@ export default function CorpusView() {
               clearAll();
             }
           }}
-          className="rounded-lg border border-line px-3 py-1.5 text-[11.5px] text-ink-faint transition hover:border-neg hover:text-neg"
+          className="border-line text-ink-faint hover:border-neg hover:text-neg rounded-lg border px-3 py-1.5 text-[11.5px] transition"
         >
           清空全部
         </button>
@@ -88,11 +100,7 @@ export default function CorpusView() {
       <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="已批改" value={`${stats.totalEssays}`} unit="篇" />
         <StatCard label="累计写作" value={`${stats.totalWords}`} unit="词" />
-        <StatCard
-          label="沉淀词伙"
-          value={`${buckets.phrases.length}`}
-          unit="条"
-        />
+        <StatCard label="沉淀词伙" value={`${buckets.phrases.length}`} unit="条" />
         <StatCard
           label="高频错误类型"
           value={`${stats.errorByDimension.length}`}
@@ -102,11 +110,9 @@ export default function CorpusView() {
 
       {/* 薄弱项分布 */}
       {stats.errorByDimension.length > 0 && (
-        <section className="mt-6 rounded-xl border border-line bg-card p-5">
-          <h2 className="text-[14px] font-semibold text-ink">
-            错误在评分项上的分布
-          </h2>
-          <p className="mt-1 text-[11.5px] text-ink-faint">
+        <section className="border-line bg-card mt-6 rounded-xl border p-5">
+          <h2 className="text-ink text-[14px] font-semibold">错误在评分项上的分布</h2>
+          <p className="text-ink-faint mt-1 text-[11.5px]">
             同一个评分项反复出错，说明这是系统性问题，需要针对性训练而不是零散修改。
           </p>
           <ul className="mt-4 space-y-3">
@@ -114,9 +120,7 @@ export default function CorpusView() {
               <li key={d.dimension}>
                 <div className="flex items-baseline justify-between text-[12.5px]">
                   <span className="text-ink">{d.label}</span>
-                  <span className="tabular-nums text-ink-faint">
-                    {d.count} 次
-                  </span>
+                  <span className="text-ink-faint tabular-nums">{d.count} 次</span>
                 </div>
                 <div className="mt-1.5">
                   <ScoreBar
@@ -133,13 +137,13 @@ export default function CorpusView() {
 
       {/* Tabs */}
       <div className="mt-7">
-        <div className="inline-flex rounded-lg border border-line bg-card p-0.5">
+        <div className="border-line bg-card flex w-full overflow-x-auto rounded-lg border p-0.5 sm:inline-flex sm:w-auto">
           {TABS.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`rounded-[6px] px-3.5 py-1.5 text-[12.5px] transition ${
+              className={`flex-1 shrink-0 rounded-[6px] px-3.5 py-2 text-[12.5px] whitespace-nowrap transition sm:py-1.5 ${
                 tab === t.id ? "bg-accent text-white" : "text-ink-soft hover:text-ink"
               }`}
             >
@@ -150,12 +154,12 @@ export default function CorpusView() {
             </button>
           ))}
         </div>
-        <p className="mt-2.5 text-[11.5px] leading-relaxed text-ink-faint">
+        <p className="text-ink-faint mt-2.5 text-[11.5px] leading-relaxed">
           {TABS.find((t) => t.id === tab)?.hint}
         </p>
 
         {list.length === 0 ? (
-          <p className="mt-8 text-[13px] text-ink-faint">
+          <p className="text-ink-faint mt-8 text-[13px]">
             这里还没有内容。多批改几篇，语料会自动累积。
           </p>
         ) : (
@@ -166,35 +170,33 @@ export default function CorpusView() {
               return (
                 <article
                   key={item.id}
-                  className={`flex flex-col rounded-lg border bg-card px-4 py-3.5 ${
+                  className={`bg-card flex flex-col rounded-lg border px-4 py-3.5 ${
                     item.kind === "error" ? "border-neg/25" : "border-line"
                   }`}
                 >
                   <div className="flex flex-wrap items-center gap-1.5">
                     {item.topic && <Badge tone="neutral">{item.topic}</Badge>}
                     <Badge tone="accent">{item.dimension}</Badge>
-                    {occurrences > 1 && (
-                      <Badge tone="warn">出现 {occurrences} 次</Badge>
-                    )}
+                    {occurrences > 1 && <Badge tone="warn">出现 {occurrences} 次</Badge>}
                   </div>
 
                   <p
                     className={`mt-2.5 leading-relaxed ${
                       item.kind === "error"
-                        ? "text-[13px] text-neg line-through decoration-neg/40"
-                        : "text-[13px] text-ink"
+                        ? "text-neg decoration-neg/40 text-[13px] line-through"
+                        : "text-ink text-[13px]"
                     }`}
                   >
                     {item.text}
                   </p>
 
                   {item.correction && (
-                    <p className="mt-1.5 text-[12.5px] leading-relaxed font-medium text-pos">
+                    <p className="text-pos mt-1.5 text-[12.5px] leading-relaxed font-medium">
                       → {item.correction}
                     </p>
                   )}
 
-                  <p className="mt-2 text-[11.5px] leading-relaxed text-ink-faint">
+                  <p className="text-ink-faint mt-2 text-[11.5px] leading-relaxed">
                     {item.note}
                   </p>
                 </article>
@@ -217,13 +219,13 @@ function StatCard({
   unit: string;
 }) {
   return (
-    <div className="rounded-xl border border-line bg-card px-4 py-3.5">
-      <div className="text-[11.5px] text-ink-faint">{label}</div>
+    <div className="border-line bg-card rounded-xl border px-4 py-3.5">
+      <div className="text-ink-faint text-[11.5px]">{label}</div>
       <div className="mt-1 flex items-baseline gap-1">
-        <span className="text-[24px] leading-none font-semibold tabular-nums text-ink">
+        <span className="text-ink text-[24px] leading-none font-semibold tabular-nums">
           {value}
         </span>
-        <span className="text-[11.5px] text-ink-faint">{unit}</span>
+        <span className="text-ink-faint text-[11.5px]">{unit}</span>
       </div>
     </div>
   );

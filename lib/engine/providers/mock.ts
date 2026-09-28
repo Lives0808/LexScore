@@ -47,12 +47,18 @@ function factsFor(facts: Fact[], id: DimensionId, exam: string): Fact[] {
 
 function toEvidence(facts: Fact[], sentences: Sentence[]): Evidence[] {
   return facts.map((f) => {
-    const sentence = f.sentenceId ? sentences.find((s) => s.id === f.sentenceId) : undefined;
+    const sentence = f.sentenceId
+      ? sentences.find((s) => s.id === f.sentenceId)
+      : undefined;
     return {
       sentenceId: f.sentenceId ?? "",
       quote: f.quote ?? sentence?.text ?? "",
       polarity:
-        f.delta > 0 ? ("positive" as const) : f.delta < 0 ? ("negative" as const) : ("neutral" as const),
+        f.delta > 0
+          ? ("positive" as const)
+          : f.delta < 0
+            ? ("negative" as const)
+            : ("neutral" as const),
       comment: f.detail,
       metric: f.metric,
       delta: f.delta,
@@ -87,7 +93,9 @@ function buildSummary(
       `加分项 ${positives.length} 处，累计 +${trimZero(weight)} 分：${positives[0].comment}`,
     );
   }
-  parts.push(`当前处于「${bandDescriptor(max === 9 ? "ielts" : "toefl", score)}」的水平区间。`);
+  parts.push(
+    `当前处于「${bandDescriptor(max === 9 ? "ielts" : "toefl", score)}」的水平区间。`,
+  );
   return parts.join(" ");
 }
 
@@ -131,9 +139,7 @@ export function scoreWithRules(ctx: GradeContext): ScoringPlan {
   const overallLabel = formatOverall(exam, overall);
 
   const weakest = [...dimensions].sort((a, b) => a.score / a.max - b.score / b.max)[0];
-  const strongest = [...dimensions].sort(
-    (a, b) => b.score / b.max - a.score / a.max,
-  )[0];
+  const strongest = [...dimensions].sort((a, b) => b.score / b.max - a.score / a.max)[0];
 
   const parts: string[] = [];
   parts.push(

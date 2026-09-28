@@ -26,7 +26,10 @@ export function buildGradingPrompt(
     .join("\n");
 
   const numbered = bundle.sentences
-    .map((s) => `[${s.id}] (第${s.paragraphIndex + 1}段 第${s.indexInParagraph + 1}句) ${s.text}`)
+    .map(
+      (s) =>
+        `[${s.id}] (第${s.paragraphIndex + 1}段 第${s.indexInParagraph + 1}句) ${s.text}`,
+    )
     .join("\n");
 
   const factLines = bundle.facts
@@ -39,7 +42,9 @@ export function buildGradingPrompt(
   const templateLines =
     bundle.template.hits.length > 0
       ? bundle.template.hits
-          .map((h) => `- 「${h.phrase}」（${h.category}，句 ${h.sentenceId}）：${h.reason}`)
+          .map(
+            (h) => `- 「${h.phrase}」（${h.category}，句 ${h.sentenceId}）：${h.reason}`,
+          )
           .join("\n")
       : "未命中模板库。";
 

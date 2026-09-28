@@ -1,10 +1,5 @@
 import type { GradeInput, Report } from "../types";
-import {
-  TASK_LABELS,
-  TASK_REQUIREMENTS,
-  formatOverall,
-  overallScore,
-} from "../rubrics";
+import { TASK_LABELS, TASK_REQUIREMENTS, formatOverall, overallScore } from "../rubrics";
 import {
   analyzeCohesion,
   analyzeGrammar,
@@ -18,7 +13,11 @@ import {
   deriveFacts,
   type AnalysisBundle,
 } from "./analyzers";
-import { analyzeChartCoverage, analyzeConstraints, analyzeIntegratedCoverage } from "./coverage";
+import {
+  analyzeChartCoverage,
+  analyzeConstraints,
+  analyzeIntegratedCoverage,
+} from "./coverage";
 import { detectTopics } from "./lexicon";
 import { segmentEssay } from "./segment";
 import { getProvider } from "./providers";
@@ -78,6 +77,8 @@ export async function gradeEssay(input: GradeInput): Promise<GradeResult> {
     topics,
     usedTopicPhrases: lexis.usedTopicPhrases,
     repetitions: lexis.repetitions,
+    listeningPoints: input.listeningPoints,
+    readingPoints: input.readingPoints,
   });
 
   let coverage;
@@ -118,7 +119,13 @@ export async function gradeEssay(input: GradeInput): Promise<GradeResult> {
   const facts = deriveFacts(partial, input.exam, input.taskType, coverage);
   const bundle: AnalysisBundle = { ...partial, facts, corpus: [] };
 
-  const ctx: GradeContext = { input: { ...input, essay }, bundle, facts, coverage, constraints };
+  const ctx: GradeContext = {
+    input: { ...input, essay },
+    bundle,
+    facts,
+    coverage,
+    constraints,
+  };
 
   const provider = getProvider();
   let plan;
@@ -148,14 +155,7 @@ export async function gradeEssay(input: GradeInput): Promise<GradeResult> {
   });
 
   const reportId = newId("rep");
-  const corpus = buildCorpus(
-    reportId,
-    sentences,
-    merged,
-    grammar.errors,
-    lexis,
-    topics,
-  );
+  const corpus = buildCorpus(reportId, sentences, merged, grammar.errors, lexis, topics);
 
   const report: Report = {
     id: reportId,
