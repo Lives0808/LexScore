@@ -132,8 +132,26 @@ async function main() {
   process.stdout.write("\r".padEnd(80) + "\r");
 
   /* --- 2. 组装 tree（文本内联，二进制引用 blob，删除用 sha:null） --- */
+
+  // 本地 origin/<branch> 引用可能落后于真正的远端状态（例如上一次是走 API 推的），
+  // 于是把「其实早就删掉了」的文件又删一遍，导致 422 BadObjectState。
+  // 因此先拉取远端当前 tree，只对真实存在的路径发删除指令。
+  const remotePaths = new Set();
+  if (deleted.length > 0) {
+    const baseTree = await api(
+      `/repos/${slug}/git/trees/${baseCommit.tree.sha}?recursive=1`,
+    );
+    for (const entry of baseTree.tree ?? []) {
+      if (entry.type === "blob") remotePaths.add(entry.path);
+    }
+  }
+
   const tree = [];
   for (const c of deleted) {
+    if (!remotePaths.has(c.path)) {
+      console.log(`  跳过（远端已不存在）：${c.path}`);
+      continue;
+    }
     tree.push({ path: c.path, mode: "100644", type: "blob", sha: null });
   }
   for (const c of added) {

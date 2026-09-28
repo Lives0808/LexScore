@@ -343,7 +343,20 @@ pkill -f "appname=gradlew"      # 先确认没有残留的构建进程
 `android/build.gradle` 里已经把阿里云镜像放在官方源之前，
 镜像缺包时会自动回落到 `google()` / `mavenCentral()`。
 
-**5. JDK 必须是 21。**
+**5. `github.com` 被墙时怎么推送。**
+`git push` 走的是 `github.com:443`，容易被阻断；但 `api.github.com` 通常仍可达
+（`gh` 命令能用就是这个原因）。仓库里带了一个绕过方案：
+
+```bash
+node scripts/push-via-api.mjs --dry-run   # 先看会提交什么
+node scripts/push-via-api.mjs             # 走 GitHub Git Data API 推送
+```
+
+它用 blob / tree / commit / ref 四个 API 完成和 `git push` 等价的推送，
+二进制文件走 base64。推送后本地与远端内容一致，但提交对象不同，
+下次网络正常时执行 `git fetch origin && git reset --hard origin/main` 对齐即可。
+
+**6. JDK 必须是 21。**
 Capacitor 8 的 `capacitor.build.gradle` 里写死了
 `sourceCompatibility JavaVersion.VERSION_21`，用 JDK 17 会直接编译失败。
 
