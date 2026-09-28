@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { AnnotationStatus } from "@/lib/types";
 import { applyAccepted, DIMENSION_LABELS } from "@/lib/text";
 import { updateAnnotationStatus, useHydrated, useReports } from "@/lib/store";
@@ -23,8 +23,10 @@ const STATUS_FILTERS = [
   { id: "ignored", label: "已忽略" },
 ];
 
-export default function ReportView({ reportId }: { reportId: string }) {
+export default function ReportView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const reportId = searchParams.get("id") ?? "";
   const hydrated = useHydrated();
   const reports = useReports();
   const [dimension, setDimension] = useState<string | null>(null);

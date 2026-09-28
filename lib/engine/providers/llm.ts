@@ -40,14 +40,19 @@ const VALID_SEVERITY: Severity[] = ["high", "medium", "low"];
 const VALID_DIMENSIONS: DimensionId[] = ["TR", "CC", "LR", "GRA", "TF", "OD", "LU", "SV"];
 
 export function llmConfig() {
+  // 浏览器 / WebView 里没有 process.env，也不应该把 API Key 打进客户端产物，
+  // 因此这里统一返回空 Key —— available() 为 false，自动使用规则评分器。
+  // 服务端（Node）环境下仍然读取环境变量。
+  const env = typeof process !== "undefined" && process.env ? process.env : undefined;
+
   return {
-    baseUrl: (process.env.LEXSCORE_LLM_BASE_URL || "https://api.openai.com/v1").replace(
+    baseUrl: (env?.LEXSCORE_LLM_BASE_URL || "https://api.openai.com/v1").replace(
       /\/$/,
       "",
     ),
-    apiKey: process.env.LEXSCORE_LLM_API_KEY || "",
-    model: process.env.LEXSCORE_LLM_MODEL || "gpt-4o-mini",
-    timeoutMs: Number(process.env.LEXSCORE_LLM_TIMEOUT_MS || 90000),
+    apiKey: env?.LEXSCORE_LLM_API_KEY || "",
+    model: env?.LEXSCORE_LLM_MODEL || "gpt-4o-mini",
+    timeoutMs: Number(env?.LEXSCORE_LLM_TIMEOUT_MS || 90000),
   };
 }
 

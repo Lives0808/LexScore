@@ -5,13 +5,14 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
+    // eslint-config-next 的默认忽略项
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Capacitor 同步进安卓工程的 Web 产物，以及安卓原生代码
+    "android/**",
   ]),
 ]);
 
