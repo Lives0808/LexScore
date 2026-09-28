@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #10161d;
+  --color-ink-soft: #56646f;
+  --color-ink-faint: #8b98a3;
+  --color-line: #e3e8ee;
+  --color-line-strong: #ccd5de;
+  --color-bg: #f6f8fa;
+  --color-card: #ffffff;
+  --color-accent: #1f4d8f;
+  --color-accent-soft: #eaf0f8;
+  --color-pos: #0d8050;
+  --color-pos-soft: #e7f5ee;
+  --color-neg: #b8342a;
+  --color-neg-soft: #fdeceb;
+  --color-warn: #9a6a10;
+  --color-warn-soft: #fdf4e3;
+  --color-violet: #5b3a8f;
+  --color-violet-soft: #f1ecfa;
+
+  --font-sans: var(--font-geist-sans), "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 原文中被批注标记的片段 */
+.mark {
+  border-radius: 2px;
+  padding: 0 1px;
+  cursor: help;
+  transition: background-color 0.12s ease;
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-underline-offset: 3px;
+}
+.mark-neg {
+  background: var(--color-neg-soft);
+  text-decoration-color: color-mix(in srgb, var(--color-neg) 45%, transparent);
+}
+.mark-warn {
+  background: var(--color-warn-soft);
+  text-decoration-color: color-mix(in srgb, var(--color-warn) 45%, transparent);
+}
+.mark-pos {
+  background: var(--color-pos-soft);
+  text-decoration-color: color-mix(in srgb, var(--color-pos) 45%, transparent);
+}
+.mark[data-active="true"] {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+
+/* 修改版预览中被替换的片段 */
+.diff-add {
+  background: var(--color-pos-soft);
+  color: var(--color-pos);
+  border-radius: 2px;
+  padding: 0 1px;
+  font-weight: 500;
+}
+.diff-pending {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  border-radius: 2px;
+  padding: 0 1px;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+/* 细滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}

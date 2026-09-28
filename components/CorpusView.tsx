@@ -1,0 +1,230 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import type { CorpusItem } from "@/lib/types";
+import {
+  aggregateCorpus,
+  bucketCorpus,
+  clearAll,
+  corpusStats,
+  useHydrated,
+  useReports,
+} from "@/lib/store";
+import { Badge, ScoreBar } from "./ui/Badge";
+
+type Bucket = "phrases" | "sentences" | "errors";
+
+const TABS: { id: Bucket; label: string; hint: string }[] = [
+  { id: "phrases", label: "好词与词伙", hint: "文中用对的学术词汇与话题词伙，可直接复用到同话题写作" },
+  { id: "sentences", label: "好句", hint: "复杂句 + 学术词汇且未命中语法规则，可作为改写模板" },
+  { id: "errors", label: "高频错误", hint: "命中规则库的错误，按出现次数排序，优先消除重复项" },
+];
+
+export default function CorpusView() {
+  const hydrated = useHydrated();
+  const reports = useReports();
+  const [tab, setTab] = useState<Bucket>("phrases");
+
+  const items = useMemo(() => aggregateCorpus(reports), [reports]);
+  const buckets = useMemo(() => bucketCorpus(items), [items]);
+  const stats = useMemo(() => corpusStats(items, reports), [items, reports]);
+  const maxErrorCount = Math.max(1, ...stats.errorByDimension.map((d) => d.count));
+
+  if (!hydrated) {
+    return (
+      <div className="mx-auto max-w-[640px] px-5 py-24 text-center text-[13px] text-ink-faint">
+        加载中…
+      </div>
+    );
+  }
+
+  if (reports.length === 0) {
+    return (
+      <div className="mx-auto max-w-[640px] px-5 py-24 text-center">
+        <h1 className="text-[18px] font-semibold text-ink">语料库还是空的</h1>
+        <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
+          每批改一篇作文，LexScore 会自动把其中的好词、好句和反复出现的错误收集到这里。
+          批改几篇之后，这里就是你自己的专属语料。
+        </p>
+        <Link
+          href="/"
+          className="mt-5 inline-block rounded-lg bg-accent px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90"
+        >
+          去批改第一篇
+        </Link>
+      </div>
+    );
+  }
+
+  const list = buckets[tab];
+
+  return (
+    <div className="mx-auto max-w-[1100px] px-5 py-10">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-[22px] font-semibold tracking-tight text-ink">
+            我的写作语料库
+          </h1>
+          <p className="mt-2 max-w-[560px] text-[13px] leading-relaxed text-ink-soft">
+            自动从你写过的作文里抽取的专属素材。复习时不用再背通用范文，
+            直接用自己写过的、已经被验证过的表达。
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm("确定要清空所有批改记录与语料吗？该操作不可撤销。")) {
+              clearAll();
+            }
+          }}
+          className="rounded-lg border border-line px-3 py-1.5 text-[11.5px] text-ink-faint transition hover:border-neg hover:text-neg"
+        >
+          清空全部
+        </button>
+      </div>
+
+      {/* 概览 */}
+      <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="已批改" value={`${stats.totalEssays}`} unit="篇" />
+        <StatCard label="累计写作" value={`${stats.totalWords}`} unit="词" />
+        <StatCard
+          label="沉淀词伙"
+          value={`${buckets.phrases.length}`}
+          unit="条"
+        />
+        <StatCard
+          label="高频错误类型"
+          value={`${stats.errorByDimension.length}`}
+          unit="类"
+        />
+      </div>
+
+      {/* 薄弱项分布 */}
+      {stats.errorByDimension.length > 0 && (
+        <section className="mt-6 rounded-xl border border-line bg-card p-5">
+          <h2 className="text-[14px] font-semibold text-ink">
+            错误在评分项上的分布
+          </h2>
+          <p className="mt-1 text-[11.5px] text-ink-faint">
+            同一个评分项反复出错，说明这是系统性问题，需要针对性训练而不是零散修改。
+          </p>
+          <ul className="mt-4 space-y-3">
+            {stats.errorByDimension.map((d) => (
+              <li key={d.dimension}>
+                <div className="flex items-baseline justify-between text-[12.5px]">
+                  <span className="text-ink">{d.label}</span>
+                  <span className="tabular-nums text-ink-faint">
+                    {d.count} 次
+                  </span>
+                </div>
+                <div className="mt-1.5">
+                  <ScoreBar
+                    value={d.count}
+                    max={maxErrorCount}
+                    tone={d.count >= maxErrorCount * 0.7 ? "neg" : "warn"}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Tabs */}
+      <div className="mt-7">
+        <div className="inline-flex rounded-lg border border-line bg-card p-0.5">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`rounded-[6px] px-3.5 py-1.5 text-[12.5px] transition ${
+                tab === t.id ? "bg-accent text-white" : "text-ink-soft hover:text-ink"
+              }`}
+            >
+              {t.label}
+              <span className="ml-1.5 tabular-nums opacity-60">
+                {buckets[t.id].length}
+              </span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-2.5 text-[11.5px] leading-relaxed text-ink-faint">
+          {TABS.find((t) => t.id === tab)?.hint}
+        </p>
+
+        {list.length === 0 ? (
+          <p className="mt-8 text-[13px] text-ink-faint">
+            这里还没有内容。多批改几篇，语料会自动累积。
+          </p>
+        ) : (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {list.map((item) => {
+              const occurrences =
+                (item as CorpusItem & { occurrences?: number }).occurrences ?? 1;
+              return (
+                <article
+                  key={item.id}
+                  className={`flex flex-col rounded-lg border bg-card px-4 py-3.5 ${
+                    item.kind === "error" ? "border-neg/25" : "border-line"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {item.topic && <Badge tone="neutral">{item.topic}</Badge>}
+                    <Badge tone="accent">{item.dimension}</Badge>
+                    {occurrences > 1 && (
+                      <Badge tone="warn">出现 {occurrences} 次</Badge>
+                    )}
+                  </div>
+
+                  <p
+                    className={`mt-2.5 leading-relaxed ${
+                      item.kind === "error"
+                        ? "text-[13px] text-neg line-through decoration-neg/40"
+                        : "text-[13px] text-ink"
+                    }`}
+                  >
+                    {item.text}
+                  </p>
+
+                  {item.correction && (
+                    <p className="mt-1.5 text-[12.5px] leading-relaxed font-medium text-pos">
+                      → {item.correction}
+                    </p>
+                  )}
+
+                  <p className="mt-2 text-[11.5px] leading-relaxed text-ink-faint">
+                    {item.note}
+                  </p>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  unit,
+}: {
+  label: string;
+  value: string;
+  unit: string;
+}) {
+  return (
+    <div className="rounded-xl border border-line bg-card px-4 py-3.5">
+      <div className="text-[11.5px] text-ink-faint">{label}</div>
+      <div className="mt-1 flex items-baseline gap-1">
+        <span className="text-[24px] leading-none font-semibold tabular-nums text-ink">
+          {value}
+        </span>
+        <span className="text-[11.5px] text-ink-faint">{unit}</span>
+      </div>
+    </div>
+  );
+}
