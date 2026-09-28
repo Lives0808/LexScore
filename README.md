@@ -1,5 +1,12 @@
 # LexScore
 
+[![Release](https://img.shields.io/github/v/release/Lives0808/LexScore?style=flat-square&color=6366F1&label=release)](https://github.com/Lives0808/LexScore/releases)
+[![License](https://img.shields.io/github/license/Lives0808/LexScore?style=flat-square&color=6366F1&label=license)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-6366F1?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6366F1?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Capacitor](https://img.shields.io/badge/Capacitor-6366F1?style=flat-square&logo=capacitor&logoColor=white)](https://capacitorjs.com)
+[![Android](https://img.shields.io/badge/Android-6366F1?style=flat-square&logo=android&logoColor=white)](https://github.com/Lives0808/LexScore/tree/main/android)
+
 面向中国考生的雅思 / 托福写作批改工具。核心主张只有一句话：
 
 > **告诉你「为什么这里扣了分」，而不是给一句空泛的评价。**
@@ -384,4 +391,6 @@ Next.js 16（App Router / Turbopack，静态导出）· React 19 · TypeScript �
 
 ---
 
-私有项目，暂未开源授权。
+## 许可证
+
+MIT © 2026 Lives0808 — 详见 [LICENSE](LICENSE)。
