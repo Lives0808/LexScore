@@ -2,3 +2,7 @@
 node_modules
 package-lock.json
 *.md
+
+# 静态导出产物与安卓工程（含 Capacitor 同步进去的 Web 资源）
+out
+android

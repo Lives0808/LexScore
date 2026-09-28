@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 预览报告（npm run preview 生成）
+/preview-report.html
+
+# 构建出的 APK（不入库，走 GitHub Release 附件分发）
+/LexScore-*.apk

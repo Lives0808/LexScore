@@ -47,8 +47,40 @@
 - 带 **PWA 清单与应用图标**，在手机浏览器里可以「添加到主屏幕」，
   打开后是全屏独立窗口，接近原生应用的体验。
 
-需要说明的是，这里的「手机版」指的是同一套代码的响应式适配，
-不是单独开发的 iOS / Android 原生应用。
+### 安卓 App
+
+仓库里包含一个**原生安卓应用**（`android/`），构建产物是可直接安装的 APK。
+
+关键设计：**评分引擎是纯 TypeScript、零 Node 依赖的，所以它整个跑在 App 内部**——
+安卓版**完全离线可用**，不需要后端服务器，也不需要在 APK 里塞任何 API Key。
+作业流程是：
+
+```
+Next.js 静态导出（out/）
+      ↓  npx cap sync android
+安卓工程 assets/public/
+      ↓  ./gradlew assembleRelease
+LexScore.apk
+```
+
+App 里用的是同一份引擎和同一套界面代码，因此**批改结果与网页版逐字节一致**，
+不存在「两套实现各算各的」问题。
+
+```bash
+npm run android:apk     # 构建 release APK（需要 JDK 21 + Android SDK）
+npm run android:debug   # 构建 debug APK（不需要签名配置）
+```
+
+也可以直接用脚本，它会自动定位 JDK 与 Android SDK：
+
+```bash
+./scripts/build-android.sh release
+```
+
+APK 输出在 `android/app/build/outputs/apk/release/`。
+
+**环境要求**：JDK 21（Capacitor 8 要求）、Android SDK（platform 36 + build-tools）。
+脚本会自动在常见路径下查找，也可以通过 `JAVA_HOME` / `ANDROID_HOME` 指定。
 
 ### 提分幅度说明
 
@@ -124,7 +156,9 @@ npm run verify    # 校验正确性（引擎 + 界面结构两层）
 npm run lint
 npm run typecheck
 npm run format    # Prettier 格式化
-npm run icons     # 重新生成 PWA 图标（手写 PNG，无图形库依赖）
+npm run icons     # 重新生成全部应用图标（Web / PWA / 安卓，手写 PNG）
+npm run preview   # 导出一份单文件 HTML 批改报告，用来快速看效果
+npm run android:apk   # 构建安卓 release APK
 ```
 
 ---
@@ -135,7 +169,18 @@ npm run icons     # 重新生成 PWA 图标（手写 PNG，无图形库依赖）
 模型负责**把测量结果讲成自然的话并给出灵活的改写**。两者输出同一套数据结构，
 UI 完全不用改。
 
-复制 `.env.example` 为 `.env.local`，填入任意 OpenAI 兼容接口：
+> ⚠️ **换成静态导出后的变化。** 为了能打包进安卓 App 并离线运行，
+> 应用改成了静态导出，没有服务端了。API Key 不能放在客户端里
+> （会被任何人从 APK 里解出来），所以**浏览器与安卓端目前一律使用规则评分器**，
+> 模型评分器的代码保留着但不会启用。
+>
+> 想启用模型，有两个可行方向：
+> 1. 起一个独立的后端服务持有 Key，客户端改为调用它；
+> 2. 做成「用户自带 Key」模式，让用户填自己的 Key 存在本机。
+>
+> 原有的服务端接入方式（下面这段）在 Node 环境下依然有效。
+
+在 Node 环境（或自己加回一个服务端路由）时，配置任意 OpenAI 兼容接口即可：
 
 ```bash
 LEXSCORE_LLM_BASE_URL=https://api.deepseek.com/v1
@@ -143,7 +188,7 @@ LEXSCORE_LLM_API_KEY=sk-xxxxxxxx
 LEXSCORE_LLM_MODEL=deepseek-chat
 ```
 
-配置后服务端会自动切换到模型评分器；模型调用失败会自动回退到规则评分器，
+配置后会自动切换到模型评分器；模型调用失败会自动回退到规则评分器，
 并在结果里标明回退原因，不会让用户拿到空白页面。
 
 提示词见 `lib/engine/prompts.ts`，设计上有三个关键点：
@@ -166,9 +211,12 @@ LEXSCORE_LLM_MODEL=deepseek-chat
  ├─ 4. 事实层（Fact）                  ← 所有结论的原料，每条都带原文定位
  ├─ 5. 批注生成                        ← target 必须在原句中逐字符可定位
  └─ 6. 评分器（可插拔）
-        ├─ rule-engine v1（默认，确定性）
-        └─ llm:<model>（可选，调用失败自动回退）
+        ├─ rule-engine v1（默认，确定性，完全离线）
+        └─ llm:<model>（可选，需要独立后端或用户自带 Key）
 ```
+
+整条链路是纯 TypeScript、零 Node 依赖的，因此既能在浏览器里跑，
+也能原封不动地跑在安卓 WebView 里 —— 这是安卓版能完全离线工作的原因。
 
 设计原则：**任何一个分数变化都必须能追溯到一条可定位到原文的事实**。
 这也是 `npm run verify` 要校验的东西，它分两层：
@@ -184,6 +232,11 @@ curl 只能拿到「加载中…」，所以用服务端渲染把每个组件真
 原文 / 修改版两列是否都存在、移动端标签是否渲染、批注卡片数量是否对得上、
 三种状态是否都能撤销、触摸设备下不应出现悬浮提示框。
 
+**产物层**（`verify:static`，需要先 `npm run build`）—— 检查静态导出产物里
+每个页面的站内资源引用是否都真实存在，以及评分引擎是否真的被打进了 bundle。
+这一步对安卓尤其重要：**WebView 加载不到 JS/CSS 就是一片白屏，而且构建阶段完全
+不报错**，所以 `build-android.sh` 会在打包成 APK 之前自动跑这个校验并因此中断构建。
+
 ---
 
 ## 项目结构
@@ -191,9 +244,9 @@ curl 只能拿到「加载中…」，所以用服务端渲染把每个组件真
 ```
 app/
   page.tsx                    输入页
-  report/[id]/page.tsx        批改报告页
+  report/page.tsx             批改报告页（?id=xxx）
   corpus/page.tsx             个人语料库
-  api/grade/route.ts          批改接口
+  manifest.ts                 PWA 清单
 components/
   GradeForm.tsx               作文输入表单
   CorpusView.tsx              语料库视图
@@ -203,11 +256,14 @@ components/
     SentenceDiff.tsx          逐句左右对照 + 悬浮原因
     AnnotationCard.tsx        单条批注（接受 / 忽略）
     Diagnostics.tsx           扣题度 / 反模板 / 覆盖检测 / 硬性约束
+  ui/Badge.tsx                徽章 / 进度条 / 分数配色
 lib/
   types.ts                    核心类型契约
   rubrics.ts                  雅思托福评分标准与总分进位规则
-  text.ts                     定位、分栏切分、修改稿预览（前后端共用）
+  text.ts                     定位、分栏切分、修改稿预览
   store.ts                    localStorage 存储 + useSyncExternalStore 订阅
+  hooks.ts                    媒体查询（区分鼠标 / 触摸）
+  grade-client.ts             客户端批改入口（动态加载引擎）
   samples.ts                  示例题目与作文
   engine/
     index.ts                  主编排
@@ -217,7 +273,13 @@ lib/
     coverage.ts               图表数据覆盖 / 听力论点配对
     prompts.ts                模型提示词
     providers/                评分器抽象：mock(规则) / llm(模型)
-scripts/verify.ts             正确性校验
+android/                      安卓工程（Capacitor 生成）
+scripts/
+  verify.ts                   引擎层校验：批注定位 / 引用一致性 / 分栏切分
+  render-check.tsx            界面层校验：服务端渲染后断言 DOM 结构
+  build-preview.tsx           导出单文件 HTML 批改报告
+  build-android.sh            安卓 APK 构建（自动定位 JDK / SDK）
+  generate-icons.mjs          手写 PNG 生成 Web / PWA / 安卓全套图标
 ```
 
 ---
@@ -238,27 +300,74 @@ scripts/verify.ts             正确性校验
 4. **雅思 Task 1 需要手动粘贴图表数据。** 目前不支持上传图片识别图表。
 5. **数据存在浏览器 localStorage 里。** 换浏览器或清理缓存会丢失，
    没有账号体系，也没有服务端数据库。
-6. **没有原生 App。** 「手机版」指的是同一套代码的响应式适配，
-   在手机浏览器里可用；不是独立开发的 iOS / Android 应用，也没有离线批改能力
-   （批改需要访问服务端接口，除非接入模型后自行部署）。
-7. **不等同于官方成绩。** 这是一个备考训练与自我诊断工具。
+6. **只有安卓版，没有 iOS 版。** `android/` 下的 APK 可以直接安装使用，
+   评分完全离线。iOS 需要 macOS 上的 Xcode 才能构建，目前没有做。
+7. **APK 用的是仓库里的自签名密钥。** 见 `android/keystore.properties` 的说明：
+   同一把密钥必须持续使用，否则已安装的用户无法覆盖升级。
+   要上架任何应用商店，请替换成你自己的密钥。
+8. **数据存在设备本地。** 报告与语料库在 WebView 的 localStorage 里，
+   换设备或清除应用数据会丢失，没有账号体系与云同步。
+9. **不等同于官方成绩。** 这是一个备考训练与自我诊断工具。
+
+### 安卓构建踩坑记录
+
+这几个问题都是在国内网络环境下实际遇到的，写在这里省得重复排查：
+
+**1. Gradle 发行版下载极慢（约 140 KB/s）。**
+wrapper 会从 `services.gradle.org` 拉 214MB 的 `gradle-8.14.3-all.zip`。
+换成国内镜像快很多：
+
+```bash
+DIST=~/.gradle/wrapper/dists/gradle-8.14.3-all/*/
+curl -fL --http1.1 -o "$DIST/gradle-8.14.3-all.zip" \
+  https://repo.huaweicloud.com/gradle/gradle-8.14.3-all.zip
+cd "$DIST" && unzip -q -o gradle-8.14.3-all.zip && touch gradle-8.14.3-all.zip.ok
+```
+
+最后那个 `.zip.ok` 标记不能少 —— Gradle 靠它判断发行版已安装完成。
+
+**2. 报错 `Timeout of 120000 reached waiting for exclusive access to file`。**
+这是上一个构建进程被杀后留下的锁文件导致的，wrapper 会一直等锁直到超时。
+清掉即可：
+
+```bash
+find ~/.gradle/wrapper/dists -name "*.lck" -delete
+pkill -f "appname=gradlew"      # 先确认没有残留的构建进程
+```
+
+**3. 一定要确认只有一个构建进程在跑。**
+同时跑两个 `assembleRelease` 会互相抢锁，表现为**日志完全为空、进程卡住不动**，
+很容易误判成「构建太慢」。
+
+**4. Maven 依赖拉不动。**
+`android/build.gradle` 里已经把阿里云镜像放在官方源之前，
+镜像缺包时会自动回落到 `google()` / `mavenCentral()`。
+
+**5. JDK 必须是 21。**
+Capacitor 8 的 `capacitor.build.gradle` 里写死了
+`sourceCompatibility JavaVersion.VERSION_21`，用 JDK 17 会直接编译失败。
+
 
 ---
 
 ## 技术栈
 
-Next.js 16（App Router / Turbopack）· React 19 · TypeScript · Tailwind CSS v4 · Prettier
+Next.js 16（App Router / Turbopack，静态导出）· React 19 · TypeScript · Tailwind CSS v4 · Prettier
+· Capacitor 8（安卓）· Gradle 8.14 / AGP 8.13（已配置阿里云镜像源）
 
 ---
 
 ## 路线图
 
-- [ ] 接入视觉模型，直接识别图表图片
+- [x] PWA（添加到主屏幕，独立窗口运行）
+- [x] 安卓 App（离线批改，APK 可直接安装）
+- [ ] iOS 版（需要 Xcode 构建）
+- [ ] 用系统分享菜单接收作文（从微信 / 备忘录直接分享进 App）
 - [ ] 服务端存储与账号体系，支持跨设备同步语料库
 - [ ] 按话题 / 评分项做语料库复习模式（间隔重复）
 - [ ] 历史作文的进步曲线（同一评分项的分数变化）
 - [ ] 导出 PDF 批改报告
-- [ ] PWA（离线查看语料库、添加到主屏幕）
+- [ ] 接入视觉模型，直接识别图表图片
 
 ---
 

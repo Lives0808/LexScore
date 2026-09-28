@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ExamType, GradeInput, Report, TaskType } from "@/lib/types";
 import { SAMPLES } from "@/lib/samples";
+import { gradeOnClient } from "@/lib/grade-client";
 import { deleteReport, saveReport, useHydrated, useReports } from "@/lib/store";
 import { formatOverall, TASK_LABELS } from "@/lib/rubrics";
 
@@ -89,21 +90,10 @@ export default function GradeForm() {
         listeningPoints:
           taskType === "toefl_integrated" ? splitPoints(listening) : undefined,
       };
-      const res = await fetch("/api/grade", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-      const data = (await res.json()) as {
-        report?: Report;
-        error?: string;
-        notice?: string;
-      };
-      if (!res.ok || !data.report) {
-        throw new Error(data.error ?? "批改失败，请稍后重试");
-      }
-      saveReport(data.report);
-      router.push(`/report/${data.report.id}`);
+      // 直接在本地跑引擎：无需后端，安卓版离线也能批改
+      const { report } = await gradeOnClient(input);
+      saveReport(report);
+      router.push(`/report?id=${report.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "批改失败");
     } finally {
@@ -330,7 +320,7 @@ export default function GradeForm() {
                   <li key={r.id} className="group flex items-center gap-1">
                     <button
                       type="button"
-                      onClick={() => router.push(`/report/${r.id}`)}
+                      onClick={() => router.push(`/report?id=${r.id}`)}
                       className="hover:bg-accent-soft min-w-0 flex-1 rounded-lg px-2.5 py-2 text-left transition"
                     >
                       <span className="text-ink block truncate text-[12.5px]">
