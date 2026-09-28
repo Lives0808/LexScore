@@ -41,8 +41,9 @@ body {
   overflow-wrap: break-word;
 }
 
-/* 移动端输入控件字号必须 ≥16px，否则 iOS Safari 聚焦时会自动放大页面 */
-@media (max-width: 767px) {
+/* 移动端输入控件字号必须 ≥16px，否则 iOS Safari 聚焦时会自动放大页面。
+   断点用 range 语法与 Tailwind 的 md（48rem）严格互补，避免小数宽度落在缝隙里。 */
+@media (width < 48rem) {
   input,
   textarea,
   select {
