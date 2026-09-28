@@ -68,8 +68,9 @@
 
 > 纯静态站点，部署后即可用。批改全部在浏览器本地完成，不需要任何后端或 API Key。
 
-**方式三：安卓 App** —— 到 [Releases](https://github.com/Lives0808/LexScore/releases/latest)
-下载 `LexScore-*.apk`，传到手机安装。**完全离线可用**，飞行模式下也能批改。
+**方式三：安卓 App（推荐）** —— 到 [Releases](https://github.com/Lives0808/LexScore/releases/latest)
+下载 `LexScore-Native-*.apk`（**Kotlin + Jetpack Compose 原生界面**），
+传到手机安装。**完全离线可用**，飞行模式下也能批改，不需要任何权限。
 
 ### 开发者
 
@@ -78,7 +79,10 @@ npm install
 npm run dev        # http://localhost:3000
 npm run build      # 静态导出到 out/
 npm run verify     # 引擎层 + 界面层 + 产物层 三层校验
-npm run android:apk  # 构建安卓 APK（需要 JDK 21 + Android SDK）
+
+# 安卓（需要 JDK 21 + Android SDK）
+npm run android-native:apk   # 原生版：Kotlin + Jetpack Compose
+npm run android:apk          # 套壳版：Capacitor + WebView
 ```
 
 ---
@@ -110,9 +114,10 @@ npm run android:apk  # 构建安卓 APK（需要 JDK 21 + Android SDK）
 - 个人语料库（好词 / 好句 / 高频错误，按评分项分布）
 - 雅思小作文数据覆盖检测（Overview / 最大最小 / 趋势 / 对比 + 逐个数值回查）
 - 托福综合写作论点配对检测（IDF 加权，避免共享话题词误判）
-- 本地历史记录 + 四维雷达图 + 分数变化曲线（localStorage，无需登录）
-- 移动端适配 + 深色模式 + PWA 离线 + PDF 导出
-- 安卓 App（离线批改，APK 直接安装）
+- 本地历史记录（存在设备本地，无需登录）
+- 四维评分雷达图 + 分数变化曲线
+- 深色模式 / PWA 离线 / PDF 导出
+- 安卓原生 App（Kotlin + Jetpack Compose，离线批改）
 
 **🚧 进行中**
 
@@ -175,9 +180,32 @@ npm run android:apk  # 构建安卓 APK（需要 JDK 21 + Android SDK）
 app/          页面（静态导出）
 components/   界面组件（含雷达图 / 走势图 / 逐句对照）
 lib/engine/   评分引擎（segment / analyzers / coverage / providers）
-android/      安卓工程（Capacitor）
+android/          安卓套壳版（Capacitor + WebView）
+android-native/   安卓原生版（Kotlin + Jetpack Compose）
 scripts/      校验与构建脚本
 ```
+
+**两个安卓工程的区别**
+
+| | `android-native/`（推荐） | `android/` |
+| --- | --- | --- |
+| 界面 | Kotlin + Jetpack Compose，**全原生** | Capacitor WebView 套壳 |
+| 安装包 | 约 8 MB | 约 3.3 MB |
+| 定位 | 正式分发给用户 | 快速验证 / 保留作为备选 |
+
+两者共用**同一份评分引擎**（`lib/engine` 的 TypeScript），
+区别只在界面层，因此批改结果完全一致。
+
+**原生版怎么复用 TypeScript 引擎**
+
+引擎不重写成 Kotlin，而是编译成一份单文件 JS（`npm run engine:bundle`）
+打进 APK，交给一个不可见的 WebView 执行 —— 界面完全是原生 Compose，
+只有计算层用 JS，避免维护两套算法。
+
+> 试过 `app.cash.quickjs`（更轻量的纯 JNI 方案），但它的 JS 栈上限写死在库内部，
+> 跑完整套分析（分句 + 上千次正则匹配 + 事实推导）会抛 `stack overflow`，
+> 加大线程栈无效。WebView 用的是 V8，栈空间充足 —— 网页版每天都在跑同一份代码。
+> 代价是多一个 WebView 实例（约 20–30MB 内存）。
 
 **安卓构建踩坑记录**（国内网络环境下实际遇到的）
 

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LexScore Engine</title>
+</head>
+<body>
+<!--
+  评分引擎的宿主页。
+
+  这个 WebView 不显示任何界面，只负责提供 V8 运行时来执行 engine.js。
+  App 的界面完全是原生 Compose，与这个页面无关。
+
+  加载完成后通过 JavascriptInterface 通知原生侧，避免轮询。
+-->
+<script src="engine.js"></script>
+<script>
+  (function () {
+    try {
+      if (typeof LexScoreHost !== "undefined" && LexScoreHost.onReady) {
+        LexScoreHost.onReady();
+      }
+    } catch (e) {
+      // 桥接不可用时原生侧会走超时分支
+    }
+  })();
+</script>
+</body>
+</html>

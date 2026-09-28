@@ -1,0 +1,31 @@
+# 构建产物
+*.apk
+*.aar
+*.ap_
+*.aab
+*.dex
+*.class
+bin/
+gen/
+out/
+build/
+
+# Gradle
+.gradle/
+local.properties
+
+# 签名密钥（沿用 Capacitor 版那一把，配置见 keystore.properties）
+*.jks
+*.keystore
+
+# 引擎 bundle：由 npm run engine:bundle 从 TypeScript 生成，不入库
+app/src/main/assets/engine.js
+app/src/main/assets/samples.json
+
+# IDE
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+*.hprof

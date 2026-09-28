@@ -1,4 +1,4 @@
-import type { GradeInput, Report } from "../types";
+import type { Annotation, CoverageReport, GradeInput, Report } from "../types";
 import { TASK_LABELS, TASK_REQUIREMENTS, formatOverall, overallScore } from "../rubrics";
 import {
   analyzeCohesion,
@@ -21,8 +21,8 @@ import {
 import { detectTopics } from "./lexicon";
 import { segmentEssay } from "./segment";
 import { getProvider } from "./providers";
-import { ruleProvider } from "./providers/mock";
-import type { GradeContext } from "./providers/types";
+import { ruleProvider, scoreWithRules } from "./providers/mock";
+import type { GradeContext, ScoringPlan } from "./providers/types";
 
 export function newId(prefix = "r"): string {
   const rand =
@@ -38,7 +38,13 @@ export interface GradeResult {
   notice?: string;
 }
 
-export async function gradeEssay(input: GradeInput): Promise<GradeResult> {
+/**
+ * 批改流程的前半段：从原始输入跑出全部客观分析结果。
+ *
+ * 抽成独立函数是为了让「同步」和「异步」两条入口共用同一条流水线 ——
+ * 原生安卓端通过 QuickJS 调用，而 QuickJS 是同步求值的，用不了 Promise。
+ */
+function assemble(input: GradeInput) {
   const essay = input.essay.replace(/\r\n?/g, "\n").trim();
   if (!essay) throw new Error("作文内容为空");
 
@@ -81,7 +87,7 @@ export async function gradeEssay(input: GradeInput): Promise<GradeResult> {
     readingPoints: input.readingPoints,
   });
 
-  let coverage;
+  let coverage: CoverageReport | undefined;
   if (isTask1) {
     coverage = analyzeChartCoverage(input.chartData ?? "", sentences);
   } else if (input.taskType === "toefl_integrated") {
@@ -127,8 +133,81 @@ export async function gradeEssay(input: GradeInput): Promise<GradeResult> {
     constraints,
   };
 
+  const reportId = newId("rep");
+
+  /** 把评分方案组装成最终报告 */
+  const buildReport = (plan: ScoringPlan): Report => {
+    // 合并批注：规则引擎的确定性批注优先，模型批注补充其后
+    const merged: Annotation[] = [...annotations];
+    const seen = new Set(merged.map((a) => `${a.sentenceId}|${a.target.toLowerCase()}`));
+    for (const a of plan.annotations ?? []) {
+      const key = `${a.sentenceId}|${a.target.toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(a);
+    }
+    merged.sort((a, b) => {
+      const rank = (s: string) => (s === "high" ? 3 : s === "medium" ? 2 : 1);
+      return rank(b.severity) - rank(a.severity) || b.lift - a.lift;
+    });
+
+    const corpus = buildCorpus(reportId, sentences, merged, grammar.errors, lexis, topics);
+
+    const report: Report = {
+      id: reportId,
+      createdAt: Date.now(),
+      exam: input.exam,
+      taskType: input.taskType,
+      taskLabel: TASK_LABELS[input.taskType],
+      prompt: input.prompt,
+      essay,
+      wordCount: stats.wordCount,
+      overall: 0,
+      overallMax: input.exam === "ielts" ? 9 : 30,
+      overallLabel: "",
+      bandLabel: "",
+      summary: plan.summary,
+      dimensions: plan.dimensions,
+      sentences,
+      paragraphs,
+      annotations: merged,
+      relevance,
+      template,
+      coverage,
+      constraints,
+      corpus,
+      engine: plan.engine,
+    };
+
+    report.overall = overallScore(
+      input.exam,
+      plan.dimensions.map((d) => d.score),
+    );
+    report.overallLabel = formatOverall(input.exam, report.overall);
+    report.bandLabel = report.overallLabel;
+
+    return report;
+  };
+
+  return { ctx, buildReport };
+}
+
+/**
+ * 同步批改：只用确定性规则评分器。
+ *
+ * 给原生安卓端（QuickJS）和任何不方便处理 Promise 的环境使用。
+ * 因为不涉及网络与模型调用，结果完全可复现。
+ */
+export function gradeEssaySync(input: GradeInput): Report {
+  const { ctx, buildReport } = assemble(input);
+  return buildReport(scoreWithRules(ctx));
+}
+
+export async function gradeEssay(input: GradeInput): Promise<GradeResult> {
+  const { ctx, buildReport } = assemble(input);
+
   const provider = getProvider();
-  let plan;
+  let plan: ScoringPlan;
   let notice: string | undefined;
 
   try {
@@ -140,55 +219,5 @@ export async function gradeEssay(input: GradeInput): Promise<GradeResult> {
     plan = await ruleProvider.score(ctx);
   }
 
-  // 合并批注：规则引擎的确定性批注优先，模型批注补充其后
-  const merged = [...annotations];
-  const seen = new Set(merged.map((a) => `${a.sentenceId}|${a.target.toLowerCase()}`));
-  for (const a of plan.annotations ?? []) {
-    const key = `${a.sentenceId}|${a.target.toLowerCase()}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    merged.push(a);
-  }
-  merged.sort((a, b) => {
-    const rank = (s: string) => (s === "high" ? 3 : s === "medium" ? 2 : 1);
-    return rank(b.severity) - rank(a.severity) || b.lift - a.lift;
-  });
-
-  const reportId = newId("rep");
-  const corpus = buildCorpus(reportId, sentences, merged, grammar.errors, lexis, topics);
-
-  const report: Report = {
-    id: reportId,
-    createdAt: Date.now(),
-    exam: input.exam,
-    taskType: input.taskType,
-    taskLabel: TASK_LABELS[input.taskType],
-    prompt: input.prompt,
-    essay,
-    wordCount: stats.wordCount,
-    overall: 0,
-    overallMax: input.exam === "ielts" ? 9 : 30,
-    overallLabel: "",
-    bandLabel: "",
-    summary: plan.summary,
-    dimensions: plan.dimensions,
-    sentences,
-    paragraphs,
-    annotations: merged,
-    relevance,
-    template,
-    coverage,
-    constraints,
-    corpus,
-    engine: plan.engine,
-  };
-
-  report.overall = overallScore(
-    input.exam,
-    plan.dimensions.map((d) => d.score),
-  );
-  report.overallLabel = formatOverall(input.exam, report.overall);
-  report.bandLabel = report.overallLabel;
-
-  return { report, notice };
+  return { report: buildReport(plan), notice };
 }

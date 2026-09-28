@@ -238,7 +238,12 @@ writeFileSync(
 written.push([join(ROOT, "app/favicon.ico"), "32×32"]);
 
 // --- Android ---
-const ANDROID_RES = "android/app/src/main/res";
+// 同时给 Capacitor 套壳版和原生 Kotlin 版生成图标
+const ANDROID_RES_DIRS = [
+  "android/app/src/main/res",
+  "android-native/app/src/main/res",
+];
+const ANDROID_RES = ANDROID_RES_DIRS[0];
 const DENSITIES = [
   ["mdpi", 1],
   ["hdpi", 1.5],
@@ -248,22 +253,15 @@ const DENSITIES = [
 ];
 
 for (const [density, scale] of DENSITIES) {
-  const dir = `${ANDROID_RES}/mipmap-${density}`;
+  for (const res of ANDROID_RES_DIRS) {
+    const dir = `${res}/mipmap-${density}`;
+    write(`${dir}/ic_launcher.png`, Math.round(48 * scale), "legacy");
+    write(`${dir}/ic_launcher_round.png`, Math.round(48 * scale), "round");
+    write(`${dir}/ic_launcher_foreground.png`, Math.round(108 * scale), "foreground");
+  }
   written.push([
-    write(`${dir}/ic_launcher.png`, Math.round(48 * scale), "legacy"),
+    `${ANDROID_RES}/mipmap-${density}/ic_launcher.png（含原生版）`,
     `${Math.round(48 * scale)}×${Math.round(48 * scale)}`,
-  ]);
-  written.push([
-    write(`${dir}/ic_launcher_round.png`, Math.round(48 * scale), "round"),
-    `${Math.round(48 * scale)}×${Math.round(48 * scale)}`,
-  ]);
-  written.push([
-    write(
-      `${dir}/ic_launcher_foreground.png`,
-      Math.round(108 * scale),
-      "foreground",
-    ),
-    `${Math.round(108 * scale)}×${Math.round(108 * scale)}`,
   ]);
 }
 
@@ -294,6 +292,19 @@ written.push([
 ]);
 
 // 自适应图标背景色改成品牌色
+for (const res of ANDROID_RES_DIRS) {
+  const dir = join(ROOT, res, "mipmap-anydpi-v26");
+  mkdirSync(dir, { recursive: true });
+  const adaptive = `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+</adaptive-icon>
+`;
+  writeFileSync(join(dir, "ic_launcher.xml"), adaptive);
+  writeFileSync(join(dir, "ic_launcher_round.xml"), adaptive);
+}
+
 writeFileSync(
   join(ROOT, ANDROID_RES, "values/ic_launcher_background.xml"),
   `<?xml version="1.0" encoding="utf-8"?>

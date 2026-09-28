@@ -1,6 +1,6 @@
 {
   "name": "lexscore",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "description": "雅思 / 托福写作批改：四维评分对齐、逐句对照式批注、扣题度诊断与反模板检测、个人写作语料库",
   "scripts": {
@@ -17,9 +17,12 @@
     "verify:static": "node scripts/verify-static.mjs",
     "preview": "tsx scripts/build-preview.tsx",
     "icons": "node scripts/generate-icons.mjs",
+    "engine:bundle": "node scripts/build-engine-bundle.mjs",
     "android:apk": "./scripts/build-android.sh release",
     "android:debug": "./scripts/build-android.sh debug",
-    "android:sync": "cap sync android"
+    "android:sync": "cap sync android",
+    "android-native:apk": "./scripts/build-android-native.sh release",
+    "android-native:debug": "./scripts/build-android-native.sh debug"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
