@@ -6,14 +6,13 @@ import type {
   GradeInput,
 } from "../../types";
 import {
-  TASK_REQUIREMENTS,
   bandDescriptor,
   dimensionsFor,
   formatOverall,
   overallScore,
 } from "../../rubrics";
 import { clamp, roundToStep } from "../segment";
-import { deriveMetrics, scoreDimensions, toScale, type DimensionIndex } from "../scoring";
+import { toScale, type DimensionIndex } from "../scoring";
 import type { GradeContext, GraderProvider, ScoringPlan } from "./types";
 
 /**
@@ -119,10 +118,10 @@ export function scoreWithRules(ctx: GradeContext): ScoringPlan {
   const { input, facts, bundle } = ctx;
   const exam = input.exam;
   const dims = dimensionsFor(exam);
-  const minWords = TASK_REQUIREMENTS[input.taskType].minWords;
 
-  const metrics = deriveMetrics(bundle, minWords, ctx.coverage);
-  const indices = scoreDimensions(metrics, exam, input.taskType);
+  // 评分结论来自三层流水线的评分层，这里不再自行计算 ——
+  // 保证「谁打分」只有一处实现，避免两套逻辑漂移
+  const indices = ctx.pipeline.assessment.indices;
 
   const dimensions: DimensionScore[] = dims.map((meta) => {
     const idx =

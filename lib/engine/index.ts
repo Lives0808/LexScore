@@ -20,6 +20,7 @@ import {
 } from "./coverage";
 import { detectTopics } from "./lexicon";
 import { segmentEssay } from "./segment";
+import { describeTrace, runPipeline } from "./agents";
 import { getProvider } from "./providers";
 import { ruleProvider, scoreWithRules } from "./providers/mock";
 import type { GradeContext, ScoringPlan } from "./providers/types";
@@ -125,10 +126,26 @@ function assemble(input: GradeInput) {
   const facts = deriveFacts(partial, input.exam, input.taskType, coverage);
   const bundle: AnalysisBundle = { ...partial, facts, corpus: [] };
 
+  /**
+   * 三层 Agent 流水线：
+   *   1. 语言层 —— 只做语言测量与纠错
+   *   2. 语篇层 —— 只做逻辑、连贯与扣题分析
+   *   3. 评分层 —— 只消费前两层的结论，对齐 Rubric 打分（不接触原文）
+   */
+  const pipeline = runPipeline(
+    bundle,
+    annotations,
+    input.exam,
+    input.taskType,
+    req.minWords,
+    coverage,
+  );
+
   const ctx: GradeContext = {
     input: { ...input, essay },
     bundle,
     facts,
+    pipeline,
     coverage,
     constraints,
   };
@@ -138,7 +155,7 @@ function assemble(input: GradeInput) {
   /** 把评分方案组装成最终报告 */
   const buildReport = (plan: ScoringPlan): Report => {
     // 合并批注：规则引擎的确定性批注优先，模型批注补充其后
-    const merged: Annotation[] = [...annotations];
+    const merged: Annotation[] = [...pipeline.annotations];
     const seen = new Set(merged.map((a) => `${a.sentenceId}|${a.target.toLowerCase()}`));
     for (const a of plan.annotations ?? []) {
       const key = `${a.sentenceId}|${a.target.toLowerCase()}`;
@@ -183,6 +200,7 @@ function assemble(input: GradeInput) {
       coverage,
       constraints,
       corpus,
+      agents: describeTrace(pipeline),
       engine: plan.engine,
     };
 

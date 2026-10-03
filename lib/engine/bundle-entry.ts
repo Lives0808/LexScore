@@ -10,6 +10,7 @@
  */
 import { gradeEssaySync } from "./index";
 import { SAMPLES } from "../samples";
+import { analyzeHistory } from "./insights";
 
 declare const globalThis: Record<string, unknown>;
 
@@ -26,6 +27,27 @@ globalThis.LexScore = {
     try {
       const input = JSON.parse(inputJson);
       return JSON.stringify({ ok: true, report: gradeEssaySync(input) });
+    } catch (error) {
+      return JSON.stringify({
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  },
+
+  /**
+   * 跨篇错误追踪。
+   *
+   * 逻辑留在 TypeScript 里，安卓端通过这里调用 ——
+   * 不在 Kotlin 侧重写一份，避免两端分析结果不一致。
+   *
+   * @param reportsJson 用户所有报告的 JSON 数组
+   * @returns LearnerInsight 的 JSON 字符串
+   */
+  analyzeHistory(reportsJson: string): string {
+    try {
+      const reports = JSON.parse(reportsJson);
+      return JSON.stringify({ ok: true, insight: analyzeHistory(reports) });
     } catch (error) {
       return JSON.stringify({
         ok: false,

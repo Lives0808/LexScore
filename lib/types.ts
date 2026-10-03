@@ -159,6 +159,11 @@ export interface TemplateHit {
   sentenceId: string;
   quote: string;
   category: string;
+  /**
+   * filler     —— 填充式废话，不承载信息，删掉不影响内容
+   * structural —— 机械结构，本身有效但用多了显套路
+   */
+  kind: "filler" | "structural";
   reason: string;
   suggestion: string;
   /** 对被判定维度分值的扣减 */
@@ -170,6 +175,10 @@ export interface TemplateReport {
   originality: number;
   verdict: string;
   hits: TemplateHit[];
+  /** 填充式废话数量：真正该删的 */
+  fillerCount: number;
+  /** 机械结构数量：有效但显套路，建议变化表达 */
+  structuralCount: number;
 }
 
 export interface CorpusItem {
@@ -223,6 +232,13 @@ export interface Report {
   coverage?: CoverageReport;
   constraints: ConstraintItem[];
   corpus: CorpusItem[];
+  /** 三层 Agent 各自的结论，便于用户看到分数是怎么一步步得出的 */
+  agents?: {
+    agent: "language" | "discourse" | "assessor";
+    title: string;
+    summary: string;
+    details: string[];
+  }[];
 
   /** 生成来源，便于区分规则引擎与真实模型 */
   engine: string;

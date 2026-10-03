@@ -209,7 +209,50 @@ data class Report(
     val coverage: CoverageReport? = null,
     val constraints: List<ConstraintItem> = emptyList(),
     val corpus: List<CorpusItem> = emptyList(),
+    /** 三层 Agent 各自的结论 */
+    val agents: List<AgentTrace> = emptyList(),
     val engine: String,
+)
+
+@Serializable
+data class AgentTrace(
+    val agent: String,
+    val title: String,
+    val summary: String,
+    val details: List<String> = emptyList(),
+)
+
+/** 跨篇错误追踪结果，由引擎的 analyzeHistory 产出 */
+@Serializable
+data class LearnerInsight(
+    val headline: String,
+    val recurring: List<ErrorTrend> = emptyList(),
+    val improving: List<ErrorTrend> = emptyList(),
+    val mastered: List<ErrorTrend> = emptyList(),
+    val strengthWords: List<String> = emptyList(),
+    val reportCount: Int = 0,
+    val spanDays: Int = 0,
+)
+
+@Serializable
+data class ErrorTrend(
+    val key: String,
+    val label: String,
+    val dimension: String,
+    val totalCount: Int,
+    val reportCount: Int,
+    val recentCount: Int,
+    val earlierCount: Int,
+    val trend: String,
+    val examples: List<String> = emptyList(),
+    val advice: String = "",
+)
+
+@Serializable
+data class InsightEnvelope(
+    val ok: Boolean,
+    val insight: LearnerInsight? = null,
+    val error: String? = null,
 )
 
 /** 引擎返回的外层信封：{ ok, report } 或 { ok, error } */

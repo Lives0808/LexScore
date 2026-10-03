@@ -183,6 +183,10 @@ export interface Metrics {
   argumentDepth: number;
   mechanicalTemplate: boolean;
   templateCohesionHits: number;
+  /** 填充式废话数量（真正该删的） */
+  fillerCount: number;
+  /** 机械结构数量（有效但显套路） */
+  structuralTemplateCount: number;
   templateOriginality: number;
 }
 
@@ -333,9 +337,10 @@ export function deriveMetrics(
     : 0;
 
   // 机械模板：模板命中里属于「填充式废话」的那几类
-  const mechanicalTemplate = template.hits.some((h) =>
-    ["谚语套话", "万能开头", "诉诸常识", "两分法套话"].includes(h.category),
-  );
+  const fillerCount = template.fillerCount;
+  const structuralTemplateCount = template.structuralCount;
+  // 只有填充式废话才算「机械模板」；机械结构不该按同一标准惩罚
+  const mechanicalTemplate = fillerCount > 0;
 
   /**
    * 模板化的衔接语数量。
@@ -397,6 +402,8 @@ export function deriveMetrics(
     argumentDepth,
     mechanicalTemplate,
     templateCohesionHits,
+    fillerCount,
+    structuralTemplateCount,
     templateOriginality: template.originality,
   };
 }
@@ -517,7 +524,17 @@ export function scoreDimensions(
    * 扣掉三成指数，TR 反而低于 Band 5.5。
    * 这个信号现在只作为界面提示，不参与评分。
    */
-  const taskPenalty = m.mechanicalTemplate ? 0.1 : 0;
+  /**
+   * 模板惩罚按性质区分。
+   *
+   * 填充式废话（With the development of society 之类）不承载信息，
+   * 删掉只会让论证更紧凑 → 明确扣分。
+   * 机械结构（Firstly / In conclusion）本身是有效标记，
+   * 只是用多了显套路 → 轻微扣分并建议变化表达，不该与废话同罚。
+   */
+  const taskPenalty =
+    Math.min(0.14, m.fillerCount * 0.07) +
+    Math.min(0.06, m.structuralTemplateCount * 0.02);
 
   /* ---------- 连贯与衔接 / 组织发展 ---------- */
   // 关键修正：不再把「显性衔接词密度低」当缺点。

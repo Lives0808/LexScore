@@ -12,6 +12,8 @@ import {
   useReports,
 } from "@/lib/store";
 import ScoreTrend from "./report/ScoreTrend";
+import { InsightPanel } from "./report/Insights";
+import { analyzeHistory } from "@/lib/engine/insights";
 import { Badge, ScoreBar } from "./ui/Badge";
 
 type Bucket = "phrases" | "sentences" | "errors";
@@ -42,6 +44,7 @@ export default function CorpusView() {
   const items = useMemo(() => aggregateCorpus(reports), [reports]);
   const buckets = useMemo(() => bucketCorpus(items), [items]);
   const stats = useMemo(() => corpusStats(items, reports), [items, reports]);
+  const insight = useMemo(() => analyzeHistory(reports), [reports]);
   const maxErrorCount = Math.max(1, ...stats.errorByDimension.map((d) => d.count));
 
   if (!hydrated) {
@@ -107,6 +110,11 @@ export default function CorpusView() {
           value={`${stats.errorByDimension.length}`}
           unit="类"
         />
+      </div>
+
+      {/* 个人错误追踪：跨篇分析，指出该专项突破什么 */}
+      <div className="mt-6">
+        <InsightPanel insight={insight} />
       </div>
 
       {/* 总分走势：让进步可见 */}

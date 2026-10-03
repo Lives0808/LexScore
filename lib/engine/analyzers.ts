@@ -584,11 +584,15 @@ export function analyzeTemplates(sentences: Sentence[]): TemplateReport {
       sentenceId: anchor.id,
       quote: anchor.text,
       category: pattern.category,
+      kind: pattern.kind,
       reason: pattern.reason,
       suggestion: pattern.suggestion,
       penalty: pattern.penalty,
     });
   }
+
+  const fillerHits = hits.filter((h) => h.kind === "filler");
+  const structuralHits = hits.filter((h) => h.kind === "structural");
 
   const coverage = fullText.length || 1;
   const penalties = hits.reduce((a, h) => a + h.penalty, 0);
@@ -596,14 +600,38 @@ export function analyzeTemplates(sentences: Sentence[]): TemplateReport {
   const tolerance = (coverage / 100) * 0.003;
   const originality = clamp(Math.round(100 - (penalties - tolerance) * 45), 20, 100);
 
+  /**
+   * 结论要区分两类模板，不能笼统说「有模板」。
+   * 填充式废话该删；机械结构只是建议变化表达 —— 把它们混为一谈，
+   * 会让用户误以为「用 In conclusion 也会被扣分」，从而写出更差的文章。
+   */
   let verdict: string;
-  if (hits.length === 0) verdict = "未检测到模板句，语言组织自然。";
-  else if (originality >= 85) verdict = "整体自然，仅有零星套话，不影响评分。";
-  else if (originality >= 65)
+  if (hits.length === 0) {
+    verdict = "未检测到模板句，语言组织自然。";
+  } else if (fillerHits.length >= Math.max(1, structuralHits.length)) {
+    verdict =
+      `检测到 ${fillerHits.length} 处填充式废话 —— 它们不承载任何信息，` +
+      `删掉不会损失内容，只会让论证更紧凑。` +
+      (structuralHits.length > 0
+        ? `另有 ${structuralHits.length} 处机械结构，属于有效标记，变化表达即可。`
+        : "");
+  } else if (structuralHits.length > 0) {
+    verdict =
+      `有 ${structuralHits.length} 处机械结构。这类表达本身有效（不属于废话），` +
+      `但连续使用会让考官觉得套路化，建议交替使用不同的过渡方式。`;
+  } else if (originality >= 85) {
+    verdict = "整体自然，仅有零星套话，不影响评分。";
+  } else {
     verdict = "存在可识别的模板痕迹，考官可能据此判断为备考范文改写。";
-  else verdict = "模板痕迹明显，任务回应项的分数上限会被明显压低。";
+  }
 
-  return { originality, verdict, hits };
+  return {
+    originality,
+    verdict,
+    hits,
+    fillerCount: fillerHits.length,
+    structuralCount: structuralHits.length,
+  };
 }
 
 /* ------------------------------------------------------------------ *

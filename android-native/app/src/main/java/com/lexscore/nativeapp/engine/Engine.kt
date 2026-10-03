@@ -6,6 +6,8 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import com.lexscore.nativeapp.data.GradeEnvelope
 import com.lexscore.nativeapp.data.GradeInput
+import com.lexscore.nativeapp.data.InsightEnvelope
+import com.lexscore.nativeapp.data.LearnerInsight
 import com.lexscore.nativeapp.data.Report
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -152,6 +154,23 @@ object Engine {
 
     private suspend fun evaluateRaw(wv: WebView, expression: String): String? =
         evaluate(wv, expression)
+
+    /**
+     * 跨篇错误追踪。
+     *
+     * 分析逻辑留在 TypeScript 引擎里，这里只负责传参与解析 ——
+     * 不在 Kotlin 侧重写一份，避免两端结论不一致。
+     */
+    suspend fun analyzeHistory(reports: List<Report>): LearnerInsight? {
+        val wv = webView ?: return null
+        val payload = json.encodeToString(ListSerializer(Report.serializer()), reports)
+        val literal = json.encodeToString(String.serializer(), payload)
+
+        val result = evaluate(wv, "LexScore.analyzeHistory($literal)") ?: return null
+        val raw = json.decodeFromString(String.serializer(), result)
+        val envelope = json.decodeFromString(InsightEnvelope.serializer(), raw)
+        return if (envelope.ok) envelope.insight else null
+    }
 }
 
 @Serializable

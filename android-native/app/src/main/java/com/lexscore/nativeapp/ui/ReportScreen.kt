@@ -242,6 +242,11 @@ fun ReportScreen(
             )
         }
 
+        /* ---------- 三层 Agent 轨迹 ---------- */
+        if (report.agents.isNotEmpty()) {
+            item { AgentTracePanel(report.agents) }
+        }
+
         /* ---------- 结构诊断 ---------- */
         item { RelevancePanel(report) }
         item { TemplatePanel(report) }
@@ -296,6 +301,53 @@ fun ReportScreen(
         }
 
         item { Spacer(Modifier.height(8.dp)) }
+    }
+}
+
+/**
+ * 三层 Agent 轨迹。
+ *
+ * 把「语言层 → 语篇层 → 评分层」各自的结论摊开展示，
+ * 让用户看到分数不是黑箱，而是三步推导出来的。
+ */
+@Composable
+private fun AgentTracePanel(agents: List<com.lexscore.nativeapp.data.AgentTrace>) {
+    val c = LexTheme.colors
+    SectionCard {
+        Text("三层 Agent 协同", color = c.ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(4.dp))
+        BodyText(
+            "评分不是一步得出的。三个 Agent 各管一段，且评分层只能看到前两层的结论、" +
+                "看不到原文 —— 避免「看到一个语法错误就顺手压低逻辑分」这类串扰。",
+            size = 11.5f,
+            lineHeight = 18f,
+        )
+        Spacer(Modifier.height(12.dp))
+
+        agents.forEachIndexed { index, a ->
+            val tone = when (a.agent) {
+                "language" -> Tone.Accent
+                "discourse" -> Tone.Violet
+                else -> Tone.Pos
+            }
+            Row(verticalAlignment = Alignment.Top) {
+                Badge("${index + 1}", tone)
+                Spacer(Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(a.title, color = c.ink, fontSize = 12.5.sp, fontWeight = FontWeight.Medium)
+                        Badge(a.agent, tone)
+                    }
+                    Spacer(Modifier.height(3.dp))
+                    BodyText(a.summary, size = 11.5f, lineHeight = 17f)
+                    Spacer(Modifier.height(4.dp))
+                    a.details.forEach { d ->
+                        Text(d, color = c.inkFaint, fontSize = 11.sp, lineHeight = 16.sp)
+                    }
+                }
+            }
+            if (index < agents.size - 1) Spacer(Modifier.height(12.dp))
+        }
     }
 }
 

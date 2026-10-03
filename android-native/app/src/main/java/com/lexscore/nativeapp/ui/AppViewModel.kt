@@ -7,6 +7,7 @@ import android.net.Uri
 import com.lexscore.nativeapp.data.Annotation
 import com.lexscore.nativeapp.data.CorpusEntry
 import com.lexscore.nativeapp.data.GradeInput
+import com.lexscore.nativeapp.data.LearnerInsight
 import com.lexscore.nativeapp.data.Report
 import com.lexscore.nativeapp.data.ReportStore
 import com.lexscore.nativeapp.data.TaskOption
@@ -42,6 +43,8 @@ data class UiState(
     val statusFilter: String = "pending",
     val engineVersion: String = "",
     val engineError: String? = null,
+    /** 跨篇错误追踪结果 */
+    val insight: LearnerInsight? = null,
     val samples: List<Sample> = emptyList(),
     val loaded: Boolean = false,
 ) {
@@ -172,6 +175,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     loaded = true,
                 )
             }
+            refreshInsight(reports)
             // 若初始化前就请求了 autorun，这里补触发
             maybeAutorun()
         }
@@ -231,6 +235,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 .onSuccess { report ->
                     store.save(report)
                     val reports = store.load()
+                    refreshInsight(reports)
                     _state.update {
                         it.copy(
                             busy = false,
@@ -252,6 +257,23 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun openReport(report: Report) = _state.update {
         it.copy(current = report, screen = Screen.Report, dimensionFilter = null, statusFilter = "pending")
+    }
+
+    /**
+     * 重算跨篇错误追踪。
+     *
+     * 分析逻辑在 TypeScript 引擎里（LexScore.analyzeHistory），
+     * 这里只负责把历史报告传过去 —— 不在 Kotlin 侧重写一份分析逻辑。
+     */
+    private fun refreshInsight(reports: List<Report>) {
+        if (reports.isEmpty()) {
+            _state.update { it.copy(insight = null) }
+            return
+        }
+        viewModelScope.launch {
+            val insight = runCatching { Engine.analyzeHistory(reports) }.getOrNull()
+            _state.update { it.copy(insight = insight) }
+        }
     }
 
     fun openCorpus() = _state.update { it.copy(screen = Screen.Corpus) }

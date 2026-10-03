@@ -10,11 +10,14 @@ import type {
   RelevanceReport,
 } from "../../types";
 import type { AnalysisBundle } from "../analyzers";
+import type { PipelineResult } from "../agents";
 
 export interface GradeContext {
   input: GradeInput;
   bundle: AnalysisBundle;
   facts: Fact[];
+  /** 三层 Agent 流水线的完整结论，供评分层与报告展示使用 */
+  pipeline: PipelineResult;
   coverage?: CoverageReport;
   constraints: {
     id: string;

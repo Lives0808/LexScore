@@ -9,6 +9,7 @@ import { updateAnnotationStatus, useHydrated, useReports } from "@/lib/store";
 import DimensionCard from "./DimensionCard";
 import RadarChart from "./RadarChart";
 import SentenceDiff from "./SentenceDiff";
+import { AgentTracePanel } from "./Insights";
 import {
   ConstraintsPanel,
   CoveragePanel,
@@ -263,6 +264,11 @@ export default function ReportView() {
           onChangeStatus={handleChange}
           filter={{ dimension, status: status || null }}
         />
+      </section>
+
+      {/* 三层 Agent 轨迹 */}
+      <section className="mt-9">
+        <AgentTracePanel report={report} />
       </section>
 
       {/* 结构诊断 */}

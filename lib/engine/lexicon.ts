@@ -494,10 +494,22 @@ export const ACADEMIC_UPGRADES: UpgradeRule[] = [
  * 2. 反模板检测：命中即给出「为什么考官反感」
  * ------------------------------------------------------------------ */
 
+/**
+ * 模板的两种性质。
+ *
+ * 用户提出的关键区分：不能把「结构标记」和「填充废话」一视同仁。
+ *   · filler     —— 填充式废话：不承载任何信息，删掉不影响内容，该明确扣分
+ *   · structural —— 机械结构：本身是有效的结构标记，只是机械使用显套路，
+ *                   轻微扣分并建议变化表达
+ * 把两者混为一谈会让用户误以为「用 In conclusion 也会被扣分」。
+ */
+export type TemplateKind = "filler" | "structural";
+
 export interface TemplatePattern {
   id: string;
   pattern: RegExp;
   category: string;
+  kind: TemplateKind;
   reason: string;
   suggestion: string;
   penalty: number;
@@ -509,6 +521,7 @@ export const TEMPLATE_PATTERNS: TemplatePattern[] = [
     pattern:
       /\bwith the (rapid )?(development|advancement|progress) of (society|the society|modern society|technology|the economy)\b/i,
     category: "万能开头",
+    kind: "filler",
     reason:
       "与题目无关的空洞背景句。考官需要的是对本题背景的定位，而不是放之四海皆准的时代概述。",
     suggestion:
@@ -519,6 +532,7 @@ export const TEMPLATE_PATTERNS: TemplatePattern[] = [
     id: "tpl_coin",
     pattern: /\bevery coin has two sides\b/i,
     category: "谚语套话",
+    kind: "filler",
     reason: "谚语不承担论证功能，且是考官最容易识别的背诵痕迹之一。",
     suggestion: "删除该句，改为直接陈述本题存在的两种对立立场。",
     penalty: 0.5,
@@ -527,14 +541,16 @@ export const TEMPLATE_PATTERNS: TemplatePattern[] = [
     id: "tpl_widely_believed",
     pattern: /\bit is widely (believed|known|accepted|acknowledged) that\b/i,
     category: "空泛引入",
+    kind: "filler",
     reason: "「widely believed」既未说明谁相信，也无任何证据支撑，属于无效论证。",
     suggestion: "改为给出具体来源或条件的表述：Evidence from OECD data suggests that…",
-    penalty: 0.25,
+    penalty: 0.35,
   },
   {
     id: "tpl_as_we_all_know",
     pattern: /\bas we all know\b/i,
     category: "诉诸常识",
+    kind: "filler",
     reason: "学术论证不能建立在「大家都知道」之上，这是逻辑上的诉诸共识谬误。",
     suggestion: "删除，或替换为 It is widely recognised that + 具体现象。",
     penalty: 0.5,
@@ -543,6 +559,7 @@ export const TEMPLATE_PATTERNS: TemplatePattern[] = [
     id: "tpl_has_both_advantages",
     pattern: /\bhas both advantages and disadvantages\b/i,
     category: "两分法套话",
+    kind: "filler",
     reason: "只是重复题目本身，没有给出任何立场或分析，属于典型的字数填充。",
     suggestion: "删除该句，在开头段直接给出你的倾向性立场。",
     penalty: 0.5,
@@ -551,55 +568,62 @@ export const TEMPLATE_PATTERNS: TemplatePattern[] = [
     id: "tpl_last_but_not_least",
     pattern: /\blast but not least\b/i,
     category: "模板衔接",
+    kind: "structural",
     reason: "过度使用的模板衔接语，考官会将其计入背诵痕迹。",
     suggestion: "改为 Finally / Ultimately / A final consideration is…",
-    penalty: 0.25,
+    penalty: 0.15,
   },
   {
     id: "tpl_in_a_word",
     pattern: /\bin a word\b/i,
     category: "中式总结",
+    kind: "filler",
     reason: "中式英语式的总结表达，英语母语者极少在书面论证中使用。",
     suggestion: "改为 In conclusion / To conclude / On balance。",
-    penalty: 0.5,
+    penalty: 0.4,
   },
   {
     id: "tpl_from_above",
     pattern: /\bfrom what has been discussed above\b/i,
     category: "模板过渡",
+    kind: "filler",
     reason: "机械重复前文，没有综合出新的判断。",
     suggestion: "改为对前文的实质综合：Taken together, these factors suggest that…",
-    penalty: 0.25,
+    penalty: 0.35,
   },
   {
     id: "tpl_no_denying",
     pattern: /\bthere is no denying that\b/i,
     category: "绝对化套话",
+    kind: "structural",
     reason: "绝对化断言缺乏条件限定，在学术论证中难以成立。",
     suggestion: "改为 It is difficult to dispute that / There is strong evidence that…",
-    penalty: 0.25,
+    penalty: 0.15,
   },
   {
     id: "tpl_firstly_secondly",
     pattern: /\bfirstly\b[\s\S]{0,400}?\bsecondly\b/i,
     category: "机械列举",
+    kind: "structural",
     reason: "Firstly / Secondly 的机械组合是最基础的衔接方式，无法体现衔接手段的多样性。",
     suggestion:
       "至少替换一处：First and foremost / A further consideration / Equally important is that…",
-    penalty: 0.25,
+    penalty: 0.15,
   },
   {
     id: "tpl_it_is_important",
     pattern: /\bit is (very )?important (to|for)\b/i,
     category: "空泛价值判断",
+    kind: "filler",
     reason: "只说「重要」而不说明对谁重要、如何重要，论证停留在表面。",
     suggestion: "补充具体作用对象与机制：This matters for employers because…",
-    penalty: 0.25,
+    penalty: 0.3,
   },
   {
     id: "tpl_play_role",
     pattern: /\bplay(s|ed)? an (increasingly )?(important|significant|vital) role\b/i,
     category: "高频套话",
+    kind: "filler",
     reason: "该搭配本身正确，但因过度使用而失去区分度。",
     suggestion: "改为 be central to / be integral to / underpin 等更具体的表达。",
     penalty: 0.25,
@@ -608,6 +632,7 @@ export const TEMPLATE_PATTERNS: TemplatePattern[] = [
     id: "tpl_only_way",
     pattern: /\bthe only way to\b/i,
     category: "绝对化论断",
+    kind: "filler",
     reason: "「唯一方法」这类绝对化表述几乎无法论证成功。",
     suggestion:
       "改为限制性表述：one of the most effective ways to / a necessary step towards…",

@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.lexscore.nativeapp.data.DimensionMeta
 import com.lexscore.nativeapp.ui.components.Badge
 import com.lexscore.nativeapp.ui.components.BodyText
+import com.lexscore.nativeapp.ui.components.LabelText
 import com.lexscore.nativeapp.ui.components.ScoreBar
 import com.lexscore.nativeapp.ui.components.SectionCard
 import com.lexscore.nativeapp.ui.components.Tone
@@ -114,6 +115,11 @@ fun CorpusScreen(
                 )
                 StatCard("错误类型", "${errorByDimension.size}", "类", Modifier.weight(1f))
             }
+        }
+
+        // 跨篇错误追踪
+        state.insight?.let { insight ->
+            item { InsightPanel(insight) }
         }
 
         // 错误分布
@@ -216,6 +222,126 @@ fun CorpusScreen(
         }
 
         item { Spacer(Modifier.height(8.dp)) }
+    }
+}
+
+/**
+ * 跨篇错误追踪。
+ *
+ * 分析逻辑在 TypeScript 引擎里（LexScore.analyzeHistory），
+ * 这里只负责展示 —— 避免两端各写一份分析逻辑导致结论不一致。
+ */
+@Composable
+private fun InsightPanel(insight: com.lexscore.nativeapp.data.LearnerInsight) {
+    val c = LexTheme.colors
+
+    SectionCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("个人错误追踪", color = c.ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            LabelText("${insight.reportCount} 篇 · 跨度 ${insight.spanDays} 天", size = 11f)
+        }
+
+        Spacer(Modifier.height(10.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(9.dp))
+                .background(c.bg)
+                .padding(12.dp),
+        ) {
+            BodyText(insight.headline, size = 12.5f, lineHeight = 20f)
+        }
+
+        if (insight.recurring.isNotEmpty()) {
+            Spacer(Modifier.height(14.dp))
+            Text("需要专项突破", color = c.inkSoft, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            insight.recurring.forEach { t ->
+                Spacer(Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(c.negSoft.copy(alpha = 0.5f))
+                        .border(1.dp, c.neg.copy(alpha = 0.25f), RoundedCornerShape(9.dp))
+                        .padding(12.dp),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Badge(
+                            when (t.trend) {
+                                "increasing" -> "变严重"
+                                "decreasing" -> "在改善"
+                                "new" -> "新出现"
+                                else -> "持续存在"
+                            },
+                            when (t.trend) {
+                                "increasing" -> Tone.Neg
+                                "decreasing" -> Tone.Pos
+                                "new" -> Tone.Warn
+                                else -> Tone.Accent
+                            },
+                        )
+                        Text(t.label, color = c.ink, fontSize = 12.5.sp, fontWeight = FontWeight.Medium)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    LabelText(
+                        "累计 ${t.totalCount} 次 · 分布在 ${t.reportCount} 篇中 · 最近 ${t.recentCount} 次",
+                        size = 11f,
+                    )
+                    if (t.examples.isNotEmpty()) {
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            "例：" + t.examples.take(2).joinToString("　/　"),
+                            color = c.inkFaint,
+                            fontSize = 11.sp,
+                        )
+                    }
+                    Spacer(Modifier.height(5.dp))
+                    BodyText(t.advice, size = 12f, lineHeight = 18f)
+                }
+            }
+        }
+
+        if (insight.improving.isNotEmpty() || insight.mastered.isNotEmpty()) {
+            Spacer(Modifier.height(14.dp))
+            Text("已改善 / 已掌握", color = c.inkSoft, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.height(6.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                insight.improving.chunked(2).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        row.forEach { t ->
+                            Badge("${t.label} ${t.earlierCount}→${t.recentCount}", Tone.Pos)
+                        }
+                    }
+                }
+                insight.mastered.chunked(2).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        row.forEach { t -> Badge("${t.label} 已不再出现", Tone.Pos) }
+                    }
+                }
+            }
+        }
+
+        if (insight.strengthWords.isNotEmpty()) {
+            Spacer(Modifier.height(14.dp))
+            Text(
+                "你自己用过的高分表达（可复用）",
+                color = c.inkSoft,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+            )
+            Spacer(Modifier.height(6.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                insight.strengthWords.chunked(2).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        row.forEach { w -> Badge(w, Tone.Accent) }
+                    }
+                }
+            }
+        }
     }
 }
 

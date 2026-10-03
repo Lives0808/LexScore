@@ -62,11 +62,16 @@ async function withRetry(label, fn, attempts = 8) {
   throw lastError;
 }
 
-async function api(path, options = {}) {
+/**
+ * @param host 上传附件必须走 uploads.github.com ——
+ *   GitHub 的 release asset 上传端点不在 api.github.com 上，
+ *   用 api 域名会返回 404（这一点踩过一次）。
+ */
+async function api(path, options = {}, host = "api.github.com") {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 60_000);
+  const timer = setTimeout(() => controller.abort(), 120_000);
   try {
-    const res = await fetch(`https://api.github.com${path}`, {
+    const res = await fetch(`https://${host}${path}`, {
       ...options,
       signal: controller.signal,
       headers: {
@@ -158,6 +163,7 @@ for (const asset of assets) {
         headers: { "Content-Type": "application/octet-stream" },
         body: data,
       },
+      "uploads.github.com",
     ),
   );
   console.log(`  ✓ ${uploaded.browser_download_url}`);
