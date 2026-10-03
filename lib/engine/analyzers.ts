@@ -19,6 +19,7 @@ import {
   ACADEMIC_UPGRADES,
   ADVICE_RULES,
   AWL_WORDS,
+  detectTopics,
   GRAMMAR_RULES,
   INFORMAL_MARKERS,
   LINKERS,
@@ -648,8 +649,16 @@ const INSTRUCTION_PATTERNS: { id: string; pattern: RegExp; label: string }[] = [
   { id: "outweigh", pattern: /outweigh/i, label: "比较哪一方更占优势" },
 ];
 
+/**
+ * 立场句标记。
+ *
+ * 注意要覆盖高分作文的常用句式 —— 早期版本漏了「I would argue」，
+ * 结果 Band 8 的作文因为没被识别出立场，TR 反而低于 Band 5.5。
+ * 越是好作文，越倾向用 I would argue / It is my contention 这类
+ * 而非直白的 I think。
+ */
 const POSITION_MARKERS =
-  /\b(i (believe|think|argue|contend|maintain|am convinced|firmly)|in my (view|opinion)|from my perspective|it is my (view|contention)|this essay (will|argues)|my position|i (would )?(agree|disagree))\b/i;
+  /\b(i (would )?(argue|contend|maintain|believe|think|am convinced|am of the view)|i would (suggest|submit)|in my (view|opinion|judgement)|from my perspective|it is my (view|contention|position)|this essay (will|argues|contends)|my (position|contention|view) is|i (would )?(agree|disagree))\b/i;
 
 export function extractKeywords(prompt: string): {
   topic: string[];
@@ -702,7 +711,25 @@ export function analyzeRelevance(
   }));
 
   const hitCount = keywords.filter((k) => k.hit).length;
-  const hitRatio = keywords.length ? hitCount / keywords.length : 1;
+  const literalRatio = keywords.length ? hitCount / keywords.length : 1;
+
+  /**
+   * 字面命中率不能直接当扣题度。
+   *
+   * 校准测试发现：Band 8 的作文在字面命中上反而低于 Band 5.5 ——
+   * 因为高分作文必然做同义替换（university → tertiary education，
+   * free → funded by the state），字面匹配等于在惩罚词汇能力。
+   *
+   * 所以改成「话题域匹配」：只要作文被判定落在同一个话题域内，
+   * 就认为它没有跑题；字面命中率只用来区分「完全没提到」的极端情况。
+   */
+  const essayTopics = detectTopics(prompt, sentences.map((s) => s.text).join(" "));
+  const promptTopics = detectTopics(prompt, prompt);
+  const domainMatch =
+    promptTopics.length === 0 ||
+    essayTopics.length === 0 ||
+    essayTopics.some((t) => promptTopics.some((p) => p.id === t.id));
+  const hitRatio = domainMatch ? Math.max(0.8, literalRatio) : literalRatio;
 
   // 跑题句：与题目关键词零重叠，且不是纯过渡句
   const promptStems = new Set(keywords.map((k) => stem(k.term)));

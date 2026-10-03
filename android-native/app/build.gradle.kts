@@ -16,8 +16,8 @@ android {
         applicationId = "com.lexscore.nativeapp"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.6.0"
+        versionCode = 8
+        versionName = "0.7.0"
 
         // 引擎 bundle 由 scripts/build-engine-bundle.mjs 生成并放进 assets/
         // 不做压缩，避免运行时解压开销

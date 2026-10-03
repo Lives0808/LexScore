@@ -4,23 +4,27 @@ import type {
   Evidence,
   Fact,
   GradeInput,
-  Sentence,
 } from "../../types";
 import {
+  TASK_REQUIREMENTS,
   bandDescriptor,
   dimensionsFor,
   formatOverall,
   overallScore,
 } from "../../rubrics";
 import { clamp, roundToStep } from "../segment";
+import { deriveMetrics, scoreDimensions, toScale, type DimensionIndex } from "../scoring";
 import type { GradeContext, GraderProvider, ScoringPlan } from "./types";
 
 /**
- * 规则评分器（默认）。
+ * 规则评分器。
  *
- * 不依赖任何外部模型：每一个分数变化都来自一条可定位到原文的 Fact。
- * 目的是让评分逻辑透明、可复现、可审计——用户能看到「为什么扣分」，
- * 而不是拿到一个无法解释的数字。
+ * 评分由 lib/engine/scoring.ts 的**指标合成模型**算出，不是「基准分 + 零散加减」。
+ * 这个改动来自校准测试：旧模型下 Band 4.5 与 Band 8 的作文都落在 6.0–6.5，
+ * 完全无法区分（见 scripts/calibrate.ts）。
+ *
+ * 事实层（Fact）仍然保留，但它的角色变了：
+ * 不再决定分数，而是为分数提供**可定位到原文的依据**。
  */
 
 const DIMENSION_NOTES: Record<DimensionId, string> = {
@@ -36,7 +40,6 @@ const DIMENSION_NOTES: Record<DimensionId, string> = {
 
 function factsFor(facts: Fact[], id: DimensionId, exam: string): Fact[] {
   if (exam === "ielts") {
-    // 雅思没有独立的「句式多样性」维度，其问题并入 GRA 一起评估
     if (id === "GRA") {
       return facts.filter((f) => f.dimension === "GRA" || f.dimension === "SV");
     }
@@ -45,7 +48,10 @@ function factsFor(facts: Fact[], id: DimensionId, exam: string): Fact[] {
   return facts.filter((f) => f.dimension === id);
 }
 
-function toEvidence(facts: Fact[], sentences: Sentence[]): Evidence[] {
+function toEvidence(
+  facts: Fact[],
+  sentences: { id: string; text: string }[],
+): Evidence[] {
   return facts.map((f) => {
     const sentence = f.sentenceId
       ? sentences.find((s) => s.id === f.sentenceId)
@@ -73,11 +79,11 @@ function buildSummary(
   evidences: Evidence[],
 ): string {
   const negatives = evidences.filter((e) => e.polarity === "negative");
-  const positives = evidences.filter((e) => e.polarity === "positive" && e.delta > 0);
+  const positives = evidences.filter((e) => e.polarity === "positive");
   const scale = max === 9 ? 1 : 0.5;
 
   if (negatives.length === 0 && positives.length === 0) {
-    return `${label}未检测到明显的加分或扣分信号，得分维持在基线水平。增加可验证的具体例证与话题词汇可继续爬升。`;
+    return `${label}未检测到明显的加分或扣分信号。${bandDescriptor(max === 9 ? "ielts" : "toefl", score)}`;
   }
 
   const parts: string[] = [];
@@ -103,21 +109,43 @@ function trimZero(n: number): string {
   return n.toFixed(2).replace(/\.?0+$/, "");
 }
 
+/** 把指标合成结果渲染成「评分依据」里的一行，让用户看到分数是怎么来的 */
+function metricEvidence(idx: DimensionIndex): string {
+  const top = [...idx.parts].sort((a, b) => b.weight - a.weight).slice(0, 3);
+  return top.map((p) => `${p.name} ${p.raw}`).join(" · ");
+}
+
 export function scoreWithRules(ctx: GradeContext): ScoringPlan {
   const { input, facts, bundle } = ctx;
   const exam = input.exam;
   const dims = dimensionsFor(exam);
-  const base = exam === "ielts" ? 6.5 : 3.0;
-  const deltaScale = exam === "ielts" ? 1 : 0.5;
-  const totalCap: [number, number] = exam === "ielts" ? [-3, 2] : [-1.5, 1];
+  const minWords = TASK_REQUIREMENTS[input.taskType].minWords;
+
+  const metrics = deriveMetrics(bundle, minWords, ctx.coverage);
+  const indices = scoreDimensions(metrics, exam, input.taskType);
 
   const dimensions: DimensionScore[] = dims.map((meta) => {
-    const dimFacts = factsFor(facts, meta.id, exam);
-    const rawDelta = dimFacts.reduce((a, f) => a + f.delta, 0) * deltaScale;
-    const delta = clamp(rawDelta, totalCap[0], totalCap[1]);
-    const raw = clamp(base + delta, exam === "ielts" ? 3 : 1, meta.max);
+    const idx =
+      indices.find((i) => i.dimension === meta.id) ??
+      ({ dimension: meta.id, index: 0.5, parts: [] } as DimensionIndex);
+
+    const raw = clamp(toScale(idx.index, exam), exam === "ielts" ? 3 : 1, meta.max);
     const score = roundToStep(raw, 0.5);
+
+    const dimFacts = factsFor(facts, meta.id, exam);
     const evidences = toEvidence(dimFacts, bundle.sentences);
+
+    // 把指标合成过程作为一条中立依据放在最前，回答「这个分数是怎么来的」
+    if (idx.parts.length > 0) {
+      evidences.unshift({
+        sentenceId: "",
+        quote: "",
+        polarity: "neutral",
+        comment: `该维度由 ${idx.parts.length} 项客观指标加权合成，权重最高的三项为：${metricEvidence(idx)}。综合质量指数 ${(idx.index * 100).toFixed(0)}/100。`,
+        metric: `质量指数 ${(idx.index * 100).toFixed(0)}/100`,
+        delta: 0,
+      });
+    }
 
     return {
       dimension: meta.id,
@@ -153,19 +181,19 @@ export function scoreWithRules(ctx: GradeContext): ScoringPlan {
   }
   if (ctx.coverage) parts.push(ctx.coverage.summary);
   parts.push(
-    `全文 ${bundle.stats.wordCount} 词，共 ${bundle.stats.sentenceCount} 句；平均句长 ${bundle.stats.avgSentenceLength} 词。`,
+    `全文 ${bundle.stats.wordCount} 词，共 ${bundle.stats.sentenceCount} 句；平均句长 ${bundle.stats.avgSentenceLength} 词，句长标准差 ${bundle.stats.lengthStdDev}。`,
   );
 
   return {
     dimensions,
     summary: parts.join(" "),
-    engine: "rule-engine v1",
+    engine: "rule-engine v2",
   };
 }
 
 export const ruleProvider: GraderProvider = {
   id: "rule-engine",
-  label: "规则评分器 v1",
+  label: "规则评分器 v2",
   available: () => true,
   async score(ctx: GradeContext) {
     return scoreWithRules(ctx);
